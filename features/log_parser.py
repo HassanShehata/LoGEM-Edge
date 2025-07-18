@@ -1,7 +1,7 @@
 from llama_cpp import Llama
 
 # Path to your downloaded GGUF model (e.g., TinyLlama, Phi-2, etc.)
-MODEL_PATH = "models/tinyllama-1.1b-chat.gguf"
+MODEL_PATH = "../models/tinyllama-1.1b-chat.gguf"
 
 # Initialize model (keep n_ctx small for low memory)
 llm = Llama(model_path=MODEL_PATH, n_ctx=512)
