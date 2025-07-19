@@ -42,6 +42,10 @@ Detailed Authentication Information:
     Key Length:         0
 """
 
+#strip the log
+log_line= log_line.replace("\t"," ").replace("\n"," ").replace("\n\t"," ").replace("   ","").replace("    ","")
+
+
 # Detect template based on log and preferred format
 template_handler = TemplateHandler.detect_template(log_line, preferred_order=preferred_formats)
 
@@ -61,7 +65,7 @@ handler = LLMHandler(model_name="Qwen3-1.7B-Q3_K_L.gguf", n_ctx=1024)
 response, latency = handler.infer(
     instruction, template, log_line,
     output_format=output_format,
-    max_tokens=150
+    max_tokens=256
 )
 
 print("Output:", response)

@@ -4,8 +4,9 @@ types:
   - An account failed to log on.
 output_format: SYSLOG
 instruction: >
-  Extract fields from the log and return it in SYSLOG below template one line format only! those fields only!: 
-  account_name, logon_type, failure_reason, status, Source_Network_Address, workstation, auth_package, logon_process.
+  Extract the following fields from the log and generate a single-line Syslog-style message.
+  Use only values found in the log, and replace the placeholders in the template with actual values:
+  (Source Network Address - Account Name - Workstation Name - Logon Process - Logon Type)
 
 output_template: >
-  Template: CurrentTime<if not put $CurrentTime> account_name=<put account_name here> logon_type=<put logon_type here> failure_reason=<put failure_reason here> status=<put status here> Source_Network_Address=<put Source_Network_Address here> workstation=<put workstation here> auth_package=<put auth_package here> logon_process=<put logon_process here>
+  Format: Source_Network_Address=<Source_Network_Address> Account_Name=<account_name> Workstation_Name=<workstation> Logon_Process=<logon_process> Logon_Type=<logon_type>
