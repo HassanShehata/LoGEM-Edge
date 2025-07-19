@@ -1,0 +1,11 @@
+name: windows_logon_syslog
+type_regex: '^(An account failed to log on\.)'
+types:
+  - An account failed to log on.
+output_format: SYSLOG
+instruction: >
+  Extract fields from the log and return it in SYSLOG below template one line format only! those fields only!: 
+  account_name, logon_type, failure_reason, status, Source_Network_Address, workstation, auth_package, logon_process.
+
+output_template: >
+  Template: CurrentTime<if not put $CurrentTime> account_name=<put account_name here> logon_type=<put logon_type here> failure_reason=<put failure_reason here> status=<put status here> Source_Network_Address=<put Source_Network_Address here> workstation=<put workstation here> auth_package=<put auth_package here> logon_process=<put logon_process here>
