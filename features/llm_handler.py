@@ -38,27 +38,49 @@ class LLMHandler:
                 verbose=False
             )
 
-    def infer(self, instruction, template, log_line, max_tokens=64, stop=None):
+
+    def infer(self, instruction, template, log_line, output_format="JSON", max_tokens=64, stop=None):
         if self.model is None:
             self.load_model()
-
-        prompt = f"{instruction}\n{template}\nLog: {log_line}\nOutput:\n"+"{"
-
-        #print("-----PROMPT START-----")
-        #print(prompt)
-        #print("-----PROMPT END-----")
-        
+    
+        output_format = output_format.upper()
+    
+        # Define prefix, suffix, and stop token based on format
+        if output_format == "JSON":
+            prefix = "{"
+            suffix = "}"
+            stop = stop or ["}"]
+        elif output_format == "CEF":
+            prefix = ""
+            suffix = "\n"
+            stop = stop or ["\n"]
+        else:  # Default for unsupported/custom formats
+            prefix = ""
+            suffix = ""
+            stop = stop or ["\n"]
+    
+        prompt = f"{instruction}\n{template}\nLog: {log_line}\nOutput:\n{prefix}"
+    
+        print(f"""
+        ----------------------------------
+        {prompt}
+        ----------------------------------
+        """)
+    
         start = time.time()
         output = self.model(prompt, max_tokens=max_tokens, stop=stop, echo=False)
         end = time.time()
-
+    
         result = output["choices"][0]["text"].strip()
-        if result and not result.startswith("{"):
-            result = "{" + result
-        if result and not result.endswith("}"):
-            result = result + "}"
-
+    
+        if output_format == "JSON":
+            if result and not result.startswith("{"):
+                result = "{" + result
+            if result and not result.endswith("}"):
+                result = result + "}"
+    
         return result, round(end - start, 3)
+
 
     @staticmethod
     def list_available_models(model_dir="../../models"):

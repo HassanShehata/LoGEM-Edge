@@ -1,6 +1,9 @@
 from llm_handler import LLMHandler
 from template_handler import TemplateHandler
 
+# Preferred output formats (priority order — can come from GUI)
+preferred_formats = ["SYSLOG","CEF","JSON"]
+
 # Sample Windows log
 log_line = """An account failed to log on.
 
@@ -39,19 +42,27 @@ Detailed Authentication Information:
     Key Length:         0
 """
 
-# Detect matching template
-template_handler = TemplateHandler.detect_template(log_line)
+# Detect template based on log and preferred format
+template_handler = TemplateHandler.detect_template(log_line, preferred_order=preferred_formats)
+
 if not template_handler:
     print("No matching template found.")
     exit(1)
 
+# Load instruction/template/format from matched YAML
 instruction = template_handler.get_instruction().strip()
 template = template_handler.get_output_template().strip()
+output_format = template_handler.get_output_format().strip()
 
-# Initialize model
-handler = LLMHandler(model_name="Qwen3-0.6B-Q3_K_S.gguf", n_ctx=1024)
+# Init model
+handler = LLMHandler(model_name="Qwen3-1.7B-Q3_K_L.gguf", n_ctx=1024)
 
 # Run inference
-response, latency = handler.infer(instruction, template, log_line, max_tokens=150, stop=["}"])
+response, latency = handler.infer(
+    instruction, template, log_line,
+    output_format=output_format,
+    max_tokens=150
+)
+
 print("Output:", response)
 print("Time:", latency, "sec")

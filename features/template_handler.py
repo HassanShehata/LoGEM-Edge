@@ -45,18 +45,31 @@ class TemplateHandler:
         ]
 
     @classmethod
-    def detect_template(cls, log_line):
+    def detect_template(cls, log_line, preferred_order=None):
+        if preferred_order is None:
+            preferred_order = ["JSON"]  # default fallback
+    
+        matched_templates = []
+    
         for path in cls.list_templates():
             with open(path, 'r') as f:
                 data = yaml.safe_load(f)
                 pattern = data.get("type_regex", "")
                 accepted_types = data.get("types", [])
-
+                output_format = data.get("output_format", "JSON").upper()
+    
                 if pattern:
                     match = re.search(pattern, log_line)
                     if match:
                         extracted_type = match.group(1)
                         if extracted_type in accepted_types:
-                            return TemplateHandler(path)
+                            matched_templates.append((output_format, path))
+    
+        if matched_templates:
+            matched_templates.sort(
+                key=lambda t: preferred_order.index(t[0]) if t[0] in preferred_order else len(preferred_order)
+            )
+            return TemplateHandler(matched_templates[0][1])
+    
+        return None
 
-        return None  # No match
