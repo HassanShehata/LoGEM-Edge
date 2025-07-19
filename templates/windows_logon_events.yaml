@@ -1,0 +1,12 @@
+name: windows_logon_events
+type_regex: '^(An account failed to log on\.)'
+types:
+  - An account failed to log on.
+  - An account was successfully logged on.
+  - Special privileges assigned to new logon.
+instruction: >
+  Extract fields from the log and return only JSON with keys: account_name, logon_type, failure_reason, status, Source_Network_Address, workstation, auth_package, logon_process.
+output_template: >
+  Stick to the below output format please!!
+  Output: {"account_name": "usenames if any", "logon_type": "usually a number", "failure_reason": "Usually a description", "status": "usually a code", "Source_Network_Address": "usually source IP", "workstation": "Usually Workstation name", "auth_package": "usually NTLM or Kerberos", "logon_process": "Usually a process name"}
+output_format: JSON

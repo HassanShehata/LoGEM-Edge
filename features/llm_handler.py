@@ -44,9 +44,9 @@ class LLMHandler:
 
         prompt = f"{instruction}\n{template}\nLog: {log_line}\nOutput:\n"+"{"
 
-        print("-----PROMPT START-----")
-        print(prompt)
-        print("-----PROMPT END-----")
+        #print("-----PROMPT START-----")
+        #print(prompt)
+        #print("-----PROMPT END-----")
         
         start = time.time()
         output = self.model(prompt, max_tokens=max_tokens, stop=stop, echo=False)

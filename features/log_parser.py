@@ -1,15 +1,7 @@
 from llm_handler import LLMHandler
+from template_handler import TemplateHandler
 
-handler = LLMHandler(model_name="Qwen3-0.6B-Q3_K_S.gguf", n_ctx=1024)
-
-instruction = "Extract fields from the log and return only JSON with keys: account_name, logon_type, failure_reason, status, Source_Network_Address, workstation, auth_package, logon_process."
-
-template = (
-    "Stick to the below output format please!!\n"
-    "Output: {\"account_name\": \"usenames if any\", \"logon_type\": \"usually a number\", \"failure_reason\": \"Usually a description\", \"status\": \"usually a code\", \"Source_Network_Address\": \"usually source IP\", \"workstation\": \"Usually Workstation name\", \"auth_package\": \"usually NTLM ot Kerberos\", \"logon_process\": \"Usually a process name\"}"
-)
-
-
+# Sample Windows log
 log_line = """An account failed to log on.
 
 Subject:
@@ -47,9 +39,19 @@ Detailed Authentication Information:
     Key Length:         0
 """
 
+# Detect matching template
+template_handler = TemplateHandler.detect_template(log_line)
+if not template_handler:
+    print("No matching template found.")
+    exit(1)
 
+instruction = template_handler.get_instruction().strip()
+template = template_handler.get_output_template().strip()
+
+# Initialize model
+handler = LLMHandler(model_name="Qwen3-0.6B-Q3_K_S.gguf", n_ctx=1024)
+
+# Run inference
 response, latency = handler.infer(instruction, template, log_line, max_tokens=150, stop=["}"])
 print("Output:", response)
 print("Time:", latency, "sec")
-
-#print("Available Models:", handler.list_available_models())
