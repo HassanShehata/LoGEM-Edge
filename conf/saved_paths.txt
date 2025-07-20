@@ -1,4 +1,3 @@
 C:\Windows\System32\winevt\Logs\Microsoft-Client-Licensing-Platform%4Admin.evtx
 C:\Windows\System32\winevt\Logs\Microsoft-Windows-Application-Experience%4Program-Inventory.evtx
-/ferwg/gerherh/r/hre
-few/eqifjhbe/fefi
+/ib/
