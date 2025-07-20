@@ -1,6 +1,20 @@
 from llm_handler import LLMHandler
 from template_handler import TemplateHandler
 
+from log_files_handler import LogFilesHandler
+
+from log_files_handler import LogFilesHandler
+
+log_handler = LogFilesHandler()
+system_type = log_handler.system_type
+log_sources = log_handler.list_log_sources()
+
+print("System Type:", system_type)
+print("Log Sources:")
+for path in log_sources:
+    print(" -", path)
+
+'''
 # Preferred output formats (priority order — can come from GUI)
 preferred_formats = ["SYSLOG","CEF","JSON"]
 
@@ -70,3 +84,4 @@ response, latency = handler.infer(
 
 print("Output:", response)
 print("Time:", latency, "sec")
+'''
