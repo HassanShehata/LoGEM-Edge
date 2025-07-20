@@ -3,11 +3,13 @@ from log_sources_tab import log_sources_tab
 
 def main(page: ft.Page):
     page.title = "LoGEM - Log Intelligence"
-    page.theme_mode = ft.ThemeMode.DARK
+    page.window.width = 1050        # window's width is 200 px
+    page.window.height = 700       # window's height is 200 px
+    page.window.resizable = False  # window is not resizable
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.scroll = "none"
-    page.window_width = 800
-    page.window_height = 500
+    page.update()
+
 
     tabs = ft.Tabs(
         selected_index=0,
