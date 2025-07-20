@@ -1,6 +1,7 @@
 import flet as ft
 from log_files_handler import LogFilesHandler
 
+
 def log_sources_tab():
     log_handler = LogFilesHandler()
     log_paths = log_handler.list_log_sources()
@@ -8,6 +9,37 @@ def log_sources_tab():
     available_list = ft.ListView(spacing=5, expand=True)
     saved_items = []  # Just strings
     saved_column = ft.ListView(spacing=5, expand=True)
+    custom_input = ft.TextField(label="Add custom log path", expand=True)
+    def add_custom_path(e):
+        path = custom_input.value.strip()
+        if not path:
+            return  # Ignore empty input
+    
+        row = ft.Row([
+            ft.Text(path, expand=True),
+            ft.IconButton(
+                icon="remove",
+                tooltip="Remove from saved",
+                icon_color="red",
+                on_click=lambda ev: (
+                    saved_column.controls.remove(ev.control.parent),
+                    saved_column.update()
+                )
+            )
+        ])
+    
+        saved_column.controls.append(row)
+        saved_column.update()
+        custom_input.value = ""
+        custom_input.update()
+    
+    add_custom_button = ft.IconButton(
+        icon="add",
+        tooltip="Add custom path",
+        icon_color="blue",
+        on_click=add_custom_path
+    )
+
 
 
     # Populate available items
@@ -84,6 +116,12 @@ def log_sources_tab():
                         content=saved_column,
                         height=400,
                         expand=True
+                    ),
+                    ft.Container(
+                        content=ft.Row([custom_input, add_custom_button]),
+                        bgcolor="lightblue",
+                        padding=10,
+                        margin=ft.margin.only(top=10)
                     )
                 ]),
                 width=500,
