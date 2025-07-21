@@ -6,6 +6,7 @@ def main(page: ft.Page):
     page.window.width = 1050        # window's width is 200 px
     page.window.height = 700       # window's height is 200 px
     page.window.resizable = False  # window is not resizable
+    page.theme_mode = ft.ThemeMode.DARK
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.scroll = "none"
     page.update()
@@ -26,4 +27,4 @@ def main(page: ft.Page):
 
     page.add(tabs)
 
-ft.app(target=main)
+ft.app(target=main, view=ft.AppView.FLET_APP)  # force local no-cloud
