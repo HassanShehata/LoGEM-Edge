@@ -1,3 +1,3 @@
-/ib/
-C:\Windows\System32\winevt\Logs\IntelAudioServiceLog.evtx
-C:\Windows\System32\winevt\Logs\Key Management Service.evtx
+C:\Windows\System32\winevt\Logs\Application.evtx
+C:\Windows\System32\winevt\Logs\Internet Explorer.evtx
+C:\Windows\System32\winevt\Logs\Microsoft-Windows-AAD%4Operational.evtx
