@@ -12,13 +12,13 @@ class ConfigsHandler:
         os.makedirs(self.conf_dir, exist_ok=True)
         if not os.path.isfile(self.file_path):
             with open(self.file_path, "w") as f:
-                if self.file_name == "mapping.txt":
+                if self.file_name == "mapping.txt" or self.file_name.endswith(".json"):
                     json.dump({}, f)
                 else:
                     pass  # empty file for line-based
 
     def get_saved_paths(self):
-        if self.file_name == "mapping.txt":
+        if self.file_name == "mapping.txt" or self.file_name.endswith(".json"):
             with open(self.file_path, "r") as f:
                 return json.load(f)
         with open(self.file_path, "r") as f:
@@ -42,7 +42,7 @@ class ConfigsHandler:
                 f.write("\n".join(updated) + "\n")
 
     def save_mapping(self, mapping):
-        if self.file_name != "mapping.txt":
-            raise Exception("save_mapping is for mapping.txt only")
+        if self.file_name != "mapping.txt" and not self.file_name.endswith(".json"):
+            raise Exception("save_mapping is for mapping.txt or .json files only")
         with open(self.file_path, "w") as f:
             json.dump(mapping, f, indent=2)

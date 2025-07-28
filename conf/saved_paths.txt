@@ -1,13 +1,2 @@
 C:\Windows\System32\winevt\Logs\Application.evtx
 C:\Windows\System32\winevt\Logs\Key Management Service.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Client-Licensing-Platform%4Admin.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AAD%4Operational.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AppID%4Operational.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-Application-Experience%4Program-Telemetry.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-Application-Experience%4Steps-Recorder.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AppLocker%4EXE and DLL.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AppLocker%4MSI and Script.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AppLocker%4Packaged app-Deployment.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AppLocker%4Packaged app-Execution.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AppModel-Runtime%4Admin.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-AppReadiness%4Admin.evtx
