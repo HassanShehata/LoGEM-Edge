@@ -14,30 +14,14 @@ def sample_test_tab():
     selected_path = ft.Ref[ft.Dropdown]()
     selected_template = ft.Ref[ft.Dropdown]()
     selected_model = ft.Ref[ft.Dropdown]()
+    log_output = ft.Text()
     log_input = ft.TextField(label="Paste a log line manually or select below", multiline=True, min_lines=3, expand=True)
+
     result_box = ft.TextField(label="LLM Output", multiline=True, min_lines=3, expand=True, read_only=True)
 
-    dropdown_paths = ft.Dropdown(
-        ref=selected_path,
-        width=800,
-        hint_text="Select a saved path",
-        on_focus=lambda e: refresh_paths(),
-        on_change=lambda e: refresh_templates()
-    )
-
-    dropdown_templates = ft.Dropdown(
-        ref=selected_template,
-        width=800,
-        hint_text="Select assigned template",
-        on_focus=lambda e: refresh_templates()
-    )
-
-    dropdown_models = ft.Dropdown(
-        ref=selected_model,
-        width=800,
-        hint_text="Select model (optional override)",
-        on_focus=lambda e: refresh_models()
-    )
+    dropdown_paths = ft.Dropdown(ref=selected_path, width=800, hint_text="Select a saved path")
+    dropdown_templates = ft.Dropdown(ref=selected_template, width=800, hint_text="Select assigned template")
+    dropdown_models = ft.Dropdown(ref=selected_model, width=800, hint_text="Select model (optional override)")
 
     lines_list = ft.Dropdown(width=800, hint_text="Select a sample log line from file")
 
@@ -47,7 +31,7 @@ def sample_test_tab():
         dropdown_paths.update()
 
     def refresh_templates(e=None):
-        path = dropdown_paths.value
+        path = selected_path.current.value
         assigned = template_map_handler.get_saved_paths().get(path, []) if path else []
         dropdown_templates.options = [ft.dropdown.Option(t) for t in assigned]
         dropdown_templates.update()
@@ -59,7 +43,7 @@ def sample_test_tab():
         dropdown_models.update()
 
     def load_sample_lines(e=None):
-        path = dropdown_paths.value
+        path = selected_path.current.value
         if not path or not os.path.isfile(path):
             lines_list.options = []
         else:
@@ -80,14 +64,14 @@ def sample_test_tab():
             result_box.update()
             return
 
-        template_name = dropdown_templates.value
-        model_name = dropdown_models.value
-
+        template_name = selected_template.current.value
+        model_name = selected_model.current.value
         if not template_name:
             result_box.value = "Template not selected."
             result_box.update()
             return
 
+        # Fallback to mapped model
         if not model_name:
             model_name = model_map_handler.get_saved_paths().get(template_name, [None])[0]
 
@@ -96,15 +80,14 @@ def sample_test_tab():
             result_box.update()
             return
 
+        # Load template
         template_path = os.path.join("..", "templates", template_name)
         handler = TemplateHandler(template_path)
         instruction = handler.get_instruction()
         template_text = handler.get_output_template()
         output_format = handler.get_output_format()
 
-        # Normalize log line like in log_parser.py
-        log_line = log_line.replace("\t", " ").replace("\n", " ").replace("\n\t", " ").replace("   ", "").replace("    ", "")
-
+        # Run model
         llm = LLMHandler(model_name=model_name, n_ctx=1024)
         response, latency = llm.infer(instruction, template_text, log_line, output_format=output_format, max_tokens=256)
 
