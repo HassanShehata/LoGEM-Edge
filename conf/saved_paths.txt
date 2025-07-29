@@ -1,2 +1,3 @@
 C:\Windows\System32\winevt\Logs\Application.evtx
-C:\Windows\System32\winevt\Logs\IntelAudioServiceLog.evtx
+C:\Windows\System32\winevt\Logs\HardwareEvents.evtx
+C:\Windows\System32\winevt\Logs\Internet Explorer.evtx

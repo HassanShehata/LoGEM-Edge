@@ -3,7 +3,9 @@
     "windows_logon_cef.yaml",
     "windows_logon_syslog.yaml"
   ],
-  "C:\\Windows\\System32\\winevt\\Logs\\IntelAudioServiceLog.evtx": [
-    "windows_logon_cef.yaml"
+  "C:\\Windows\\System32\\winevt\\Logs\\HardwareEvents.evtx": [
+    "windows_logon_cef.yaml",
+    "windows_logon_events.yaml",
+    "windows_logon_syslog.yaml"
   ]
 }
