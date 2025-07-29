@@ -28,7 +28,7 @@ def get_available_templates():
 def get_available_models():
     """Scan models directory for GGUF files"""
     # Use relative path
-    models_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "models")
+    models_dir = os.path.join(os.path.dirname(__file__), "..", "..", "models")
     options = []
     
     if os.path.exists(models_dir):
