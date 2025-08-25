@@ -6,8 +6,9 @@ output_format: CEF
 instruction: >
   Extract fields from the log and return only a CEF message with the following keys:
   account_name, logon_type, failure_reason, status, Source_Network_Address, workstation.
+  If you can't parse return the word <<ERROR>> in this format <<ERROR>>
   Use this CEF format: CEF:Version|DeviceVendor|DeviceProduct|DeviceVersion|SignatureID|Name|Severity| key1=value1 key2=value2 ...
 
 output_template: >
   Stick to the below output format please!!
-  Output: CEF:0|Windows|Winlogon|1.0|1001|Windows Logon Failed|5|account_name=someuser logon_type=3 failure_reason="invalid password" status=0xC000006D Source_Network_Address=192.168.1.10 workstation=WORKSTATION1
+  EXAMPLE Output: CEF:0|Windows|Winlogon|1.0|1001|Windows Logon Failed|5|account_name=someuser logon_type=3 failure_reason="invalid password" status=0xC000006D Source_Network_Address=192.168.1.10 workstation=WORKSTATION1
