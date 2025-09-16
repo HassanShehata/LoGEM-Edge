@@ -1,10 +1,12 @@
 import flet as ft
 import re
 import os
-
 from configs_handler import ConfigsHandler
 from template_handler import TemplateHandler
 from llm_handler import LLMHandler
+import Evtx.Evtx as evtx
+import xml.etree.ElementTree as ET
+
 
 def sample_test_tab():
     config_handler = ConfigsHandler()
@@ -47,10 +49,12 @@ def sample_test_tab():
     )
     lines_list = ft.Dropdown(width=800, hint_text="Select a sample log line from file")
 
+
     def refresh_paths(e=None):
         paths = config_handler.get_saved_paths()
         dropdown_paths.options = [ft.dropdown.Option(p) for p in paths]
         dropdown_paths.update()
+
 
     def refresh_templates(e=None):
         # Always list all available templates; ignore any mapping
@@ -58,45 +62,74 @@ def sample_test_tab():
         dropdown_templates.options = [ft.dropdown.Option(t) for t in template_files]
         dropdown_templates.update()
 
+
     def refresh_models(e=None):
         models_dir = os.path.abspath(os.path.join("..", "..", "models"))
         models = [f for f in os.listdir(models_dir) if f.endswith(".gguf")] if os.path.exists(models_dir) else []
         dropdown_models.options = [ft.dropdown.Option(f) for f in models]
         dropdown_models.update()
-
+    
+    
     def load_sample_lines(e=None):
         path = selected_path.current.value
         template_name = selected_template.current.value
         if not path or not os.path.isfile(path):
-            lines_list.options = []
-        else:
-            with open(path, "r", errors="ignore") as f:
-                lines = [line.strip() for line in f.readlines()]
-            limited = lines[:100] if len(lines) > 100 else lines
-            options = []
-            if template_name:
-                # Filter lines by the selected template’s type regex and types
-                template_path = os.path.join("..", "templates", template_name)
-                handler = TemplateHandler(template_path)
-                pattern = handler.get_type_regex()
-                accepted_types = handler.get_types()
-                regex = re.compile(pattern) if pattern else None
-                for ln in limited:
-                    if not ln:
-                        continue
-                    if regex:
-                        m = regex.search(ln)
-                        if not m:
-                            continue
-                        extracted_type = m.group(1)
-                        if accepted_types and extracted_type not in accepted_types:
-                            continue
-                    options.append(ft.dropdown.Option(ln))
-            else:
-                options = [ft.dropdown.Option(ln) for ln in limited if ln]
-            lines_list.options = options
-        lines_list.update()
+            lines_list.options = [ft.dropdown.Option("No valid path selected")]
+            lines_list.update()
+            return
+    
+        options = []
+        
+        if path.lower().endswith('.evtx'):
+            try:
+                import Evtx.Evtx as evtx
+                
+                with evtx.Evtx(path) as log:
+                    count = 0
+                    for record in log.records():
+                        if count >= 10:  # Limit to first 10 records
+                            break
+                        
+                        xml_content = record.xml()
+                        '''
+                        # Extract readable text from XML
+                        import xml.etree.ElementTree as ET
+                        root = ET.fromstring(xml_content)
+                        
+                        # Try to find event data
+                        event_data = ""
+                        for elem in root.iter():
+                            if elem.text and elem.text.strip():
+                                event_data += elem.text.strip() + " "
+                        
+                        if event_data:
+                            clean_data = event_data[:200]  # Limit length
+                            options.append(ft.dropdown.Option(clean_data))
+                        '''
+                        options.append(ft.dropdown.Option(xml_content))
+                        count += 1
+                        
 
+                        
+            except Exception as e:
+                options.append(ft.dropdown.Option(f"EVTX error: {str(e)[:100]}"))
+        else:
+            # Handle regular text files
+            try:
+                with open(path, "r", errors="ignore") as f:
+                    lines = f.readlines()[:20]
+                for line in lines:
+                    if line.strip():
+                        options.append(ft.dropdown.Option(line.strip()[:150]))
+            except Exception as e:
+                options.append(ft.dropdown.Option(f"File error: {str(e)[:100]}"))
+        
+        if not options:
+            options.append(ft.dropdown.Option("No data found"))
+            
+        lines_list.options = options
+        lines_list.update()
+    
     def select_line(e):
         log_input.value = lines_list.value
         log_input.update()
@@ -123,10 +156,14 @@ def sample_test_tab():
             result_box.update()
             return
 
+        sanitized = log_line.strip()
+
+        '''
         # Flatten the log line: remove tabs/newlines and collapse multiple spaces
         sanitized = log_line.replace("\t", " ").replace("\n", " ").replace("\n\t", " ")
         while "  " in sanitized:
             sanitized = sanitized.replace("  ", " ")
+        '''
 
         template_path = os.path.join("..", "templates", template_name)
         handler = TemplateHandler(template_path)

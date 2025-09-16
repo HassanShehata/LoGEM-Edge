@@ -1,3 +1,7 @@
 C:\Windows\System32\winevt\Logs\Application.evtx
 C:\Windows\System32\winevt\Logs\HardwareEvents.evtx
 C:\Windows\System32\winevt\Logs\Internet Explorer.evtx
+C:\Windows\System32\winevt\Logs\Microsoft-Windows-BitLocker%4BitLocker Management.evtx
+C:\Windows\System32\config\SOFTWARE.LOG1
+C:\Windows\System32\winevt\Logs\Security.evtx
+C:\Windows\System32\winevt\Logs\Intel-GFX-Info%4System.evtx

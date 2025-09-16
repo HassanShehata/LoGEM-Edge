@@ -1,0 +1,7 @@
+name: generic_events
+output_format: JSON
+instruction: >
+  Extract fields from this Windows Security Event:
+  
+output_template: >
+  Stick to the JSON output format please!!
