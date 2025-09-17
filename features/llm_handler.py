@@ -4,15 +4,18 @@ import time
 import multiprocessing
 from contextlib import contextmanager
 from llama_cpp import Llama
+import json
+
 
 class LLMHandler:
-    def __init__(self, model_name, model_dir="../../models", n_ctx=256, n_threads=None, n_batch=64, n_gpu_layers=0):
+    def __init__(self, model_name, model_dir="../../models", n_ctx=1024, n_threads=None, n_batch=64, n_gpu_layers=0):
         self.model_path = os.path.abspath(os.path.join(model_dir, model_name))
         self.n_ctx = n_ctx
         self.n_threads = n_threads or multiprocessing.cpu_count()
         self.n_batch = n_batch
         self.n_gpu_layers = n_gpu_layers
         self.model = None
+
 
     @contextmanager
     def suppress_output(self):
@@ -38,47 +41,36 @@ class LLMHandler:
                 verbose=False
             )
 
-    def infer(self, instruction, template, log_line, output_format="JSON", max_tokens=64, stop=None):
+    def infer(self, prompt, model_params=None, max_tokens=64):
         if self.model is None:
             self.load_model()
-
-        output_format = output_format.upper()
-
-        # Define prefix, suffix, and stop token based on format
-        if output_format == "JSON":
-            prefix = "{"
-            suffix = "}"
-            stop = stop or ["}"]
-        elif output_format == "CEF":
-            prefix = ""
-            suffix = ""
-            stop = stop or ["\n"]
-        elif output_format == "SYSLOG":
-            prefix = ""
-            suffix = ""
-            stop = stop or None  # no stop to allow full line generation
+        
+        # Use model_params if provided, otherwise use defaults
+        if model_params:
+            stop_tokens = model_params.get("stop", ["\n"])
+            temperature = model_params.get("temperature", 0)
+            top_p = model_params.get("top_p", 0.9)
+            max_tokens = model_params.get("max_tokens", max_tokens)
         else:
-            prefix = ""
-            suffix = ""
-            stop = stop or ["\n"]
-
-        prompt = f"{instruction}\n{template}\nLog: {log_line}\nOutput:\n{prefix}"
-
+            # Fallback defaults when no model_params provided
+            stop_tokens = ["\n"]
+            temperature = 0
+            top_p = 0.9
+        
         start = time.time()
-        output = self.model(prompt, max_tokens=max_tokens, stop=stop, echo=False)
+        output = self.model(
+            prompt, 
+            max_tokens=max_tokens, 
+            stop=stop_tokens, 
+            temperature=temperature,
+            top_p=top_p,
+            echo=False
+        )
         end = time.time()
-
+        
         result = output["choices"][0]["text"].strip()
-
-        if output_format == "JSON":
-            if result and not result.startswith("{"):
-                result = "{" + result
-            if result and not result.endswith("}"):
-                result = result + "}"
-        elif output_format == "SYSLOG":
-            result = result.splitlines()[0].strip()  # ensure single-line output
-
         return result, round(end - start, 3)
+
 
     @staticmethod
     def list_available_models(model_dir="../../models"):

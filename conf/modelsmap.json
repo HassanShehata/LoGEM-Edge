@@ -1,8 +1,8 @@
 {
-  "windows_logon_events.yaml": [
-    "gemma-3-1b-it-UD-IQ1_M.gguf",
-    0.2,
-    5,
-    5
+  "generic_template.yaml": [
+    "logem-win.gguf",
+    0.3,
+    5.0,
+    9.0
   ]
 }

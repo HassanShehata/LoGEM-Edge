@@ -15,11 +15,14 @@ class TemplateHandler:
         with open(path, 'r') as f:
             return yaml.safe_load(f)
 
-    def get_instruction(self):
-        return self.template.get("instruction", "").strip() if self.template else ""
-
-    def get_output_template(self):
-        return self.template.get("output_template", "").strip() if self.template else ""
+    def get_prompt(self):
+        return self.template.get("prompt", "").strip() if self.template else ""
+    
+    def get_model_params(self):
+        return self.template.get("model_params", {}) if self.template else {}
+    
+    def get_model_template(self):
+        return self.template.get("model_template", "").strip() if self.template else ""
 
     def get_output_format(self):
         return self.template.get("output_format", "JSON").strip() if self.template else "JSON"
@@ -43,6 +46,51 @@ class TemplateHandler:
             for f in os.listdir(cls.TEMPLATE_DIR)
             if f.endswith(".yaml") or f.endswith(".yml")
         ]
+    
+    def matches_log(self, log_line):
+        """Check if log matches template's type criteria"""
+        type_regex = self.get_type_regex()
+        types_list = self.get_types()
+        
+        # If no regex or types defined, accept any log
+        if not type_regex and not types_list:
+            return True
+            
+        # If no regex defined but types exist, skip matching
+        if not type_regex:
+            return False
+            
+        # Try to extract type from log using regex
+        match = re.search(type_regex, log_line)
+        if not match:
+            return False
+            
+        # Get the extracted type (first capture group)
+        extracted_type = match.group(1)
+        
+        # Check if extracted type is in accepted types list
+        return extracted_type in types_list
+    
+    def get_match_info(self, log_line):
+        """Get detailed match information for debugging"""
+        type_regex = self.get_type_regex()
+        types_list = self.get_types()
+        
+        info = {
+            'has_regex': bool(type_regex),
+            'has_types': bool(types_list),
+            'extracted_type': None,
+            'matches': False
+        }
+        
+        if type_regex:
+            match = re.search(type_regex, log_line)
+            if match:
+                info['extracted_type'] = match.group(1)
+                info['matches'] = info['extracted_type'] in types_list if types_list else False
+        
+        return info
+
 
     @classmethod
     def detect_template(cls, log_line, preferred_order=None):

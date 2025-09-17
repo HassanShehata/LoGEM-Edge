@@ -167,15 +167,20 @@ def sample_test_tab():
 
         template_path = os.path.join("..", "templates", template_name)
         handler = TemplateHandler(template_path)
-        instruction = handler.get_instruction()
-        template_text = handler.get_output_template()
+        prompt = handler.get_prompt() #instruction = handler.get_instruction()
+        model_template = handler.get_model_template() #template_text = handler.get_output_template()
+        model_params = handler.get_model_params()
         output_format = handler.get_output_format()
 
+        constructed_prompt = f"{prompt}\nRAW_LOG: {sanitized}"
+        full_prompt = model_template.replace("{{ .Prompt }}", constructed_prompt)
+
         # Infer with sanitized log line
-        llm = LLMHandler(model_name=model_name, n_ctx=1024)
+        llm = LLMHandler(model_name=model_name, n_ctx=2048)
         response, latency = llm.infer(
-            instruction, template_text, sanitized,
-            output_format=output_format, max_tokens=256
+            full_prompt,
+            model_params=model_params,
+            max_tokens=model_params.get("max_tokens", 2048)
         )
 
         result_box.value = f"{response}\n\nTime: {latency} sec"
