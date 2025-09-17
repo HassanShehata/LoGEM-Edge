@@ -1,5 +1,9 @@
 {
   "C:\\Windows\\System32\\winevt\\Logs\\Application.evtx": [
-    "generic_template.yaml"
+    "spp_events.yaml",
+    "generic_template.yaml",
+    "windows_logon_cef.yaml",
+    "windows_logon_events.yaml",
+    "windows_logon_syslog.yaml"
   ]
 }

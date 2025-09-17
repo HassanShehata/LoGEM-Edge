@@ -3,7 +3,7 @@ from log_sources_tab import log_sources_tab
 from template_mapper_tab import template_mapper_tab
 from models_tab import models_tab
 from sample_test_tab import sample_test_tab
-
+from output_config_tab import output_config_tab
 
 
 def main(page: ft.Page):
@@ -26,7 +26,7 @@ def main(page: ft.Page):
             ft.Tab(text="Templates", content=template_mapper_tab()),
             ft.Tab(text="Models", content=models_tab()),
             ft.Tab(text="Sample Test", content=sample_test_tab()),
-            ft.Tab(text="Output Config", content=ft.Text("Output Config Coming Soon")),
+            ft.Tab(text="Output Config", content=output_config_tab())
         ]
     )
 
