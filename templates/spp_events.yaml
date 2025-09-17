@@ -1,0 +1,20 @@
+name: spp_events  
+type_regex: '<EventID[^>]*>([0-9]+)</EventID>'
+types:
+  - "16384"
+  - "16394"
+output_format: JSON
+prompt: >
+  Extract fields from the log and return only JSON with keys:EventID,SystemTime,Computer,ProcessID,EventName
+model_params:
+  stop:
+    - "<|im_start|>"
+    - "<|im_end|>"
+  temperature: 0
+  top_p: 0.9
+model_template: |
+  <|im_start|>system
+  You are a log parser. Return RAW JSON only. No <think>, no prose, no markdown.<|im_end|>
+  <|im_start|>user
+  {{ .Prompt }}<|im_end|>
+  <|im_start|>assistant
