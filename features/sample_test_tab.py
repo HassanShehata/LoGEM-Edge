@@ -190,7 +190,13 @@ def sample_test_tab():
             max_tokens=model_params.get("max_tokens", 2048)
         )
         
-        result_box.value = f"{response}\n\nTime: {latency} sec"
+        # Convert to SYSLOG format if needed
+        if output_format.upper() == "SYSLOG":
+            formatted_response = handler.json_to_syslog(response)
+            result_box.value = f"{formatted_response}\n\nTime: {latency} sec"
+        else:
+            result_box.value = f"{response}\n\nTime: {latency} sec"
+        
         result_box.update()
 
     # Refresh templates and sample lines when a new path is selected

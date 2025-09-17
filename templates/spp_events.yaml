@@ -3,7 +3,7 @@ type_regex: '<EventID[^>]*>([0-9]+)</EventID>'
 types:
   - "16384"
   - "16394"
-output_format: JSON
+output_format: SYSLOG
 prompt: >
   Extract fields from the log and return only JSON with keys:EventID,SystemTime,Computer,ProcessID,EventName
 model_params:

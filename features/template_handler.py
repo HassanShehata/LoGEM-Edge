@@ -46,7 +46,48 @@ class TemplateHandler:
             for f in os.listdir(cls.TEMPLATE_DIR)
             if f.endswith(".yaml") or f.endswith(".yml")
         ]
-    
+
+
+    def json_to_syslog(self, json_response):
+        """Convert JSON response to RFC3164 syslog format"""
+        import json
+        from datetime import datetime
+        import socket
+        
+        try:
+            # Parse JSON response
+            data = json.loads(json_response)
+            
+            # Current timestamp in RFC3164 format
+            timestamp = datetime.now().strftime("%b %d %H:%M:%S")
+            
+            # Get hostname
+            hostname = socket.gethostname()
+            
+            # Facility 16 (local0), Severity 6 (info) = Priority 134
+            priority = "<134>"
+            
+            # Create TAG from EventID if available
+            tag = f"EventID{data.get('EventID', 'Unknown')}"
+            
+            # Flatten JSON to key=value pairs
+            content_parts = []
+            for key, value in data.items():
+                if value:  # Skip empty values
+                    content_parts.append(f"{key}={value}")
+            
+            content = " ".join(content_parts)
+            
+            # RFC3164 format: <PRI>TIMESTAMP HOSTNAME TAG: CONTENT
+            syslog_message = f"{priority}{timestamp} {hostname} {tag}: {content}"
+            
+            return syslog_message
+            
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return original response
+            return json_response
+
+ 
     def matches_log(self, log_line):
         """Check if log matches template's type criteria"""
         type_regex = self.get_type_regex()
