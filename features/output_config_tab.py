@@ -6,19 +6,40 @@ def output_config_tab():
     config_handler = ConfigsHandler()
     mapping_handler = ConfigsHandler(file_name="mapping.txt") 
     models_handler = ConfigsHandler(file_name="modelsmap.json")
+    forwarder_handler = ConfigsHandler(file_name="forwarder_defaults.json")
+    overrides_handler = ConfigsHandler(file_name="forwarder_overrides.json")
+    states_handler = ConfigsHandler(file_name="button_states.json")
+    
+    # Load forwarder defaults
+    forwarder_defaults = forwarder_handler.get_saved_paths()
+    if not forwarder_defaults:
+        forwarder_defaults = {"ip": "127.0.0.1", "port": "514", "protocol": "TCP"}
+        forwarder_handler.save_mapping(forwarder_defaults)
     
     # Forwarder config fields
-    ip_field = ft.TextField(label="IP Address", width=200, value="127.0.0.1")
-    port_field = ft.TextField(label="Port", width=100, value="514")
+    ip_field = ft.TextField(label="IP Address", width=200, value=forwarder_defaults["ip"])
+    port_field = ft.TextField(label="Port", width=100, value=forwarder_defaults["port"])
     protocol_dropdown = ft.Dropdown(
         label="Protocol",
         width=100,
-        value="TCP",
+        value=forwarder_defaults["protocol"],
         options=[
             ft.dropdown.Option("TCP"),
             ft.dropdown.Option("UDP")
         ]
     )
+    
+    def save_forwarder_defaults(e=None):
+        defaults = {
+            "ip": ip_field.value,
+            "port": port_field.value,
+            "protocol": protocol_dropdown.value
+        }
+        forwarder_handler.save_mapping(defaults)
+    
+    ip_field.on_change = save_forwarder_defaults
+    port_field.on_change = save_forwarder_defaults
+    protocol_dropdown.on_change = save_forwarder_defaults
     
     hierarchy_view = ft.ListView(spacing=10, expand=True)
     
@@ -29,23 +50,46 @@ def output_config_tab():
         saved_paths = config_handler.get_saved_paths()
         template_mapping = mapping_handler.get_saved_paths()  
         model_mapping = models_handler.get_saved_paths()
+        overrides = overrides_handler.get_saved_paths()
+        states = states_handler.get_saved_paths()
         
         # Build hierarchy
         for path in saved_paths:
             templates = template_mapping.get(path, [])
+            path_key = os.path.basename(path)
+            
+            # Get override config for this file
+            file_override = overrides.get(path_key, {
+                "ip": ip_field.value,
+                "port": port_field.value,
+                "protocol": protocol_dropdown.value
+            })
             
             # Create override config for this file
-            file_ip = ft.TextField(label="IP Override", width=150, value=ip_field.value)
-            file_port = ft.TextField(label="Port Override", width=80, value=port_field.value)
+            file_ip = ft.TextField(label="IP Override", width=150, value=file_override["ip"])
+            file_port = ft.TextField(label="Port Override", width=80, value=file_override["port"])
             file_protocol = ft.Dropdown(
                 label="Protocol Override",
                 width=120,
-                value=protocol_dropdown.value,
+                value=file_override["protocol"],
                 options=[
                     ft.dropdown.Option("TCP"),
                     ft.dropdown.Option("UDP")
                 ]
             )
+            
+            def save_override(e, path_key=path_key, ip_field=file_ip, port_field=file_port, protocol_field=file_protocol):
+                overrides = overrides_handler.get_saved_paths()
+                overrides[path_key] = {
+                    "ip": ip_field.value,
+                    "port": port_field.value,
+                    "protocol": protocol_field.value
+                }
+                overrides_handler.save_mapping(overrides)
+            
+            file_ip.on_change = save_override
+            file_port.on_change = save_override
+            file_protocol.on_change = save_override
     
             override_box = ft.Container(
                 content=ft.Column([
@@ -64,15 +108,30 @@ def output_config_tab():
                 model_info = model_mapping.get(template, ["No model assigned"])
                 model_name = model_info[0] if isinstance(model_info, list) else model_info
                 
+                # Get button states
+                state_key = f"{path_key}_{template}"
+                template_state = states.get(state_key, {"enabled": False, "started": False})
+                
                 # Color based on model assignment
                 model_color = "green" if model_name != "No model assigned" else "red"
                 
                 if model_name != "No model assigned":
                     # Create buttons with state
-                    enable_btn = ft.ElevatedButton("Enable", color="green", height=30)
-                    start_btn = ft.ElevatedButton("Start", color="blue", height=30)
+                    enable_text = "Disable" if template_state["enabled"] else "Enable"
+                    enable_color = "red" if template_state["enabled"] else "green"
+                    start_text = "Stop" if template_state["started"] else "Start"
+                    start_color = "orange" if template_state["started"] else "blue"
                     
-                    def toggle_enable(e, btn=enable_btn):
+                    enable_btn = ft.ElevatedButton(enable_text, color=enable_color, height=30)
+                    start_btn = ft.ElevatedButton(start_text, color=start_color, height=30)
+                    
+                    def toggle_enable(e, btn=enable_btn, state_key=state_key):
+                        states = states_handler.get_saved_paths()
+                        current_state = states.get(state_key, {"enabled": False, "started": False})
+                        current_state["enabled"] = not current_state["enabled"]
+                        states[state_key] = current_state
+                        states_handler.save_mapping(states)
+                        
                         if btn.text == "Enable":
                             btn.text = "Disable"
                             btn.color = "red"
@@ -81,7 +140,13 @@ def output_config_tab():
                             btn.color = "green"
                         btn.update()
                     
-                    def toggle_start(e, btn=start_btn):
+                    def toggle_start(e, btn=start_btn, state_key=state_key):
+                        states = states_handler.get_saved_paths()
+                        current_state = states.get(state_key, {"enabled": False, "started": False})
+                        current_state["started"] = not current_state["started"]
+                        states[state_key] = current_state
+                        states_handler.save_mapping(states)
+                        
                         if btn.text == "Start":
                             btn.text = "Stop"
                             btn.color = "orange"
@@ -106,10 +171,21 @@ def output_config_tab():
                     )
                 else:
                     # Template without model - add pass-through buttons
-                    passthrough_btn = ft.ElevatedButton("Pass-through", color="purple", height=30)
-                    passthrough_start_btn = ft.ElevatedButton("Start", color="blue", height=30)
+                    passthrough_text = "Disable" if template_state["enabled"] else "Pass-through"
+                    passthrough_color = "red" if template_state["enabled"] else "purple"
+                    start_text = "Stop" if template_state["started"] else "Start"
+                    start_color = "orange" if template_state["started"] else "blue"
                     
-                    def toggle_passthrough(e, btn=passthrough_btn):
+                    passthrough_btn = ft.ElevatedButton(passthrough_text, color=passthrough_color, height=30)
+                    passthrough_start_btn = ft.ElevatedButton(start_text, color=start_color, height=30)
+                    
+                    def toggle_passthrough(e, btn=passthrough_btn, state_key=state_key):
+                        states = states_handler.get_saved_paths()
+                        current_state = states.get(state_key, {"enabled": False, "started": False})
+                        current_state["enabled"] = not current_state["enabled"]
+                        states[state_key] = current_state
+                        states_handler.save_mapping(states)
+                        
                         if btn.text == "Pass-through":
                             btn.text = "Disable"
                             btn.color = "red"
@@ -118,7 +194,13 @@ def output_config_tab():
                             btn.color = "purple"
                         btn.update()
                     
-                    def toggle_passthrough_start(e, btn=passthrough_start_btn):
+                    def toggle_passthrough_start(e, btn=passthrough_start_btn, state_key=state_key):
+                        states = states_handler.get_saved_paths()
+                        current_state = states.get(state_key, {"enabled": False, "started": False})
+                        current_state["started"] = not current_state["started"]
+                        states[state_key] = current_state
+                        states_handler.save_mapping(states)
+                        
                         if btn.text == "Start":
                             btn.text = "Stop"
                             btn.color = "orange"
@@ -215,7 +297,6 @@ def output_config_tab():
         ]),
         padding=20
     )
-
 
 
 

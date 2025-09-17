@@ -5,5 +5,10 @@
     "windows_logon_cef.yaml",
     "windows_logon_events.yaml",
     "windows_logon_syslog.yaml"
+  ],
+  "C:\\Windows\\System32\\winevt\\Logs\\Intel-GFX-Info%4Application.evtx": [
+    "spp_events.yaml",
+    "windows_logon_events.yaml",
+    "windows_logon_syslog.yaml"
   ]
 }
