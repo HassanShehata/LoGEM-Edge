@@ -33,7 +33,7 @@ def log_sources_tab():
                                 )
                             ])
                         ),
-                        config_handler.remove_path(p),
+                        config_handler.remove_path(p),  # This was already here - good!
                         saved_column.update(),
                         available_list.update()
                     )
@@ -57,7 +57,7 @@ def log_sources_tab():
                     icon_color="red",
                     on_click=lambda ev, p=path: (
                         saved_column.controls.remove(ev.control.parent),
-                        config_handler.remove_path(p),
+                        config_handler.remove_path(p),  # This was already here - good!
                         saved_column.update()
                     )
                 )
@@ -67,13 +67,11 @@ def log_sources_tab():
         custom_input.value = ""
         custom_input.update()
 
-
     add_custom_button = ft.IconButton(
         icon="add",
         tooltip="Add custom path",
         on_click=add_custom_path
     )
-
 
     # Populate available items
     for path in log_paths:
@@ -101,6 +99,7 @@ def log_sources_tab():
                                     icon_color="red",
                                     on_click=lambda ev: (
                                         saved_column.controls.remove(ev.control.parent),
+                                        config_handler.remove_path(p),  # FIXED: Added this line!
                                         available_list.controls.append(
                                             ft.Row([
                                                 ft.Text(p, expand=True),
@@ -118,13 +117,9 @@ def log_sources_tab():
                             ])
                         )
                     )
-
                 )
-
             ])
         )
-
-        
 
     return ft.Row(
         controls=[

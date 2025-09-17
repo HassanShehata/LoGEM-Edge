@@ -1,7 +1,1 @@
 C:\Windows\System32\winevt\Logs\Application.evtx
-C:\Windows\System32\winevt\Logs\Intel-GFX-Info%4Application.evtx
-C:\Windows\System32\winevt\Logs\Internet Explorer.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Client-Licensing-Platform%4Admin.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-Application-Experience%4Program-Compatibility-Assistant.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-Application-Experience%4Program-Compatibility-Troubleshooter.evtx
-C:\Windows\System32\winevt\Logs\Microsoft-Windows-Application-Experience%4Program-Telemetry.evtx
