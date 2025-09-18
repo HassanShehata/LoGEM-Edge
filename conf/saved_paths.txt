@@ -1,2 +1,2 @@
 C:\Windows\System32\winevt\Logs\Application.evtx
-C:\Windows\System32\winevt\Logs\Intel-GFX-Info%4Application.evtx
+C:\Windows\System32\winevt\Logs\Security.evtx

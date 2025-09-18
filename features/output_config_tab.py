@@ -1,6 +1,7 @@
 import flet as ft
 import os
 from configs_handler import ConfigsHandler
+from services_handler import services_handler
 
 def output_config_tab():
     config_handler = ConfigsHandler()
@@ -134,7 +135,7 @@ def output_config_tab():
                     enable_btn = ft.ElevatedButton(enable_text, color=enable_color, height=30)
                     start_btn = ft.ElevatedButton(start_text, color=start_color, height=30)
                     
-                    def toggle_enable(e, btn=enable_btn, state_key=state_key):
+                    def toggle_enable(e, btn=enable_btn, state_key=state_key, path=path, template=template):
                         states = states_handler.get_saved_paths()
                         current_state = states.get(state_key, {"enabled": False, "started": False})
                         current_state["enabled"] = not current_state["enabled"]
@@ -144,12 +145,14 @@ def output_config_tab():
                         if btn.text == "Enable":
                             btn.text = "Disable"
                             btn.color = "red"
+                            services_handler.create_service(path, template)
                         else:
                             btn.text = "Enable"
                             btn.color = "green"
+                            services_handler.delete_service(path, template)
                         btn.update()
                     
-                    def toggle_start(e, btn=start_btn, state_key=state_key):
+                    def toggle_start(e, btn=start_btn, state_key=state_key, path=path, template=template):
                         states = states_handler.get_saved_paths()
                         current_state = states.get(state_key, {"enabled": False, "started": False})
                         current_state["started"] = not current_state["started"]
@@ -159,9 +162,11 @@ def output_config_tab():
                         if btn.text == "Start":
                             btn.text = "Stop"
                             btn.color = "orange"
+                            services_handler.start_service(path, template)
                         else:
                             btn.text = "Start"
                             btn.color = "blue"
+                            services_handler.stop_service(path, template)
                         btn.update()
                     
                     enable_btn.on_click = toggle_enable
@@ -188,7 +193,7 @@ def output_config_tab():
                     passthrough_btn = ft.ElevatedButton(passthrough_text, color=passthrough_color, height=30)
                     passthrough_start_btn = ft.ElevatedButton(start_text, color=start_color, height=30)
                     
-                    def toggle_passthrough(e, btn=passthrough_btn, state_key=state_key):
+                    def toggle_passthrough(e, btn=passthrough_btn, state_key=state_key, path=path, template=template):
                         states = states_handler.get_saved_paths()
                         current_state = states.get(state_key, {"enabled": False, "started": False})
                         current_state["enabled"] = not current_state["enabled"]
@@ -198,12 +203,14 @@ def output_config_tab():
                         if btn.text == "Pass-through":
                             btn.text = "Disable"
                             btn.color = "red"
+                            services_handler.create_service(path, template)
                         else:
                             btn.text = "Pass-through"
                             btn.color = "purple"
+                            services_handler.delete_service(path, template)
                         btn.update()
                     
-                    def toggle_passthrough_start(e, btn=passthrough_start_btn, state_key=state_key):
+                    def toggle_passthrough_start(e, btn=passthrough_start_btn, state_key=state_key, path=path, template=template):
                         states = states_handler.get_saved_paths()
                         current_state = states.get(state_key, {"enabled": False, "started": False})
                         current_state["started"] = not current_state["started"]
@@ -213,9 +220,11 @@ def output_config_tab():
                         if btn.text == "Start":
                             btn.text = "Stop"
                             btn.color = "orange"
+                            services_handler.start_service(path, template)
                         else:
                             btn.text = "Start"
                             btn.color = "blue"
+                            services_handler.stop_service(path, template)
                         btn.update()
                     
                     passthrough_btn.on_click = toggle_passthrough

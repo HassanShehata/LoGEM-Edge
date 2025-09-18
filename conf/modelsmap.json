@@ -3,10 +3,10 @@
     "logem-win.gguf",
     0.2,
     5,
-    9.0
+    5
   ],
-  "windows_logon_cef.yaml": [
-    "gemma-3-1b-it-UD-IQ1_M.gguf",
+  "generic_template.yaml": [
+    "logem-win.gguf",
     0.2,
     5,
     5

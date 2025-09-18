@@ -3,7 +3,7 @@ type_regex: ''
 types: []
 output_format: JSON
 prompt: >
-    Extract fields from the log and return only JSON with keys:EventID,SystemTime,Computer,ProcessID,EventName
+    Extract fields from the log and return only JSON with keys:EventID, Computer, SystemTime, SubjectUserName, SubjectDomainName, TargetName, ProcessName, LogonType, Status
 model_params:
   stop:
     - "<|im_start|>"

@@ -1,14 +1,10 @@
 {
   "C:\\Windows\\System32\\winevt\\Logs\\Application.evtx": [
     "spp_events.yaml",
-    "generic_template.yaml",
-    "windows_logon_cef.yaml",
-    "windows_logon_events.yaml",
-    "windows_logon_syslog.yaml"
+    "generic_template.yaml"
   ],
-  "C:\\Windows\\System32\\winevt\\Logs\\Intel-GFX-Info%4Application.evtx": [
-    "spp_events.yaml",
-    "windows_logon_events.yaml",
-    "windows_logon_syslog.yaml"
+  "C:\\Windows\\System32\\winevt\\Logs\\Security.evtx": [
+    "generic_template.yaml",
+    "pass_through_test.yaml"
   ]
 }
