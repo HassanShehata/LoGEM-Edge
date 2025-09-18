@@ -1,26 +1,30 @@
 {
   "Application.evtx_spp_events.yaml": {
-    "enabled": true,
-    "started": true
+    "enabled": false,
+    "started": false
   },
   "Application.evtx_generic_template.yaml": {
-    "enabled": true,
-    "started": true
+    "enabled": false,
+    "started": false
   },
   "Application.evtx_windows_logon_events.yaml": {
-    "enabled": true,
-    "started": true
+    "enabled": false,
+    "started": false
   },
   "Intel-GFX-Info%4Application.evtx_spp_events.yaml": {
-    "enabled": true,
+    "enabled": false,
     "started": false
   },
   "Intel-GFX-Info%4Application.evtx_windows_logon_events.yaml": {
-    "enabled": true,
-    "started": true
+    "enabled": false,
+    "started": false
   },
   "Intel-GFX-Info%4Application.evtx_windows_logon_syslog.yaml": {
-    "enabled": true,
+    "enabled": false,
+    "started": false
+  },
+  "Application.evtx_windows_logon_cef.yaml": {
+    "enabled": false,
     "started": false
   }
 }

@@ -9,7 +9,14 @@ def output_config_tab():
     forwarder_handler = ConfigsHandler(file_name="forwarder_defaults.json")
     overrides_handler = ConfigsHandler(file_name="forwarder_overrides.json")
     states_handler = ConfigsHandler(file_name="button_states.json")
-    
+    counters_handler = ConfigsHandler(file_name="counters.json")
+
+    # Load counters
+    counters = counters_handler.get_saved_paths()
+    if not counters:
+        counters = {}
+        counters_handler.save_mapping(counters)
+
     # Load forwarder defaults
     forwarder_defaults = forwarder_handler.get_saved_paths()
     if not forwarder_defaults:
@@ -115,13 +122,15 @@ def output_config_tab():
                 # Color based on model assignment
                 model_color = "green" if model_name != "No model assigned" else "red"
                 
+
                 if model_name != "No model assigned":
                     # Create buttons with state
                     enable_text = "Disable" if template_state["enabled"] else "Enable"
                     enable_color = "red" if template_state["enabled"] else "green"
                     start_text = "Stop" if template_state["started"] else "Start"
                     start_color = "orange" if template_state["started"] else "blue"
-                    
+
+
                     enable_btn = ft.ElevatedButton(enable_text, color=enable_color, height=30)
                     start_btn = ft.ElevatedButton(start_text, color=start_color, height=30)
                     
@@ -212,6 +221,7 @@ def output_config_tab():
                     passthrough_btn.on_click = toggle_passthrough
                     passthrough_start_btn.on_click = toggle_passthrough_start
                     
+
                     template_items.append(
                         ft.Container(
                             content=ft.Row([
@@ -232,10 +242,25 @@ def output_config_tab():
                     )
                 )
             
+            # Get file-level counter
+            file_count = counters.get(path_key, 0)
+
+            # Create counter box for file header
+            file_counter_box = ft.Container(
+                content=ft.Text(f"Matches: {file_count}", color="yellow"),
+                padding=5,
+                border=ft.border.all(1, "yellow"),
+                border_radius=3,
+                width=100
+            )
+
             # File level container
             file_container = ft.Container(
                 content=ft.Column([
-                    ft.Text(f"📁 {os.path.basename(path)}", weight="bold"),
+                    ft.Row([
+                        ft.Text(f"📁 {os.path.basename(path)}", weight="bold", expand=True),
+                        file_counter_box
+                    ]),
                     ft.Row([
                         # Left side - templates
                         ft.Container(
