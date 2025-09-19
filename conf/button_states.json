@@ -2,5 +2,9 @@
   "Security.evtx_generic_template.yaml": {
     "enabled": true,
     "started": true
+  },
+  "Application.evtx_generic_template.yaml": {
+    "enabled": true,
+    "started": true
   }
 }
