@@ -5,6 +5,10 @@ import time
 from typing import Dict, Tuple, Optional, List
 from configs_handler import ConfigsHandler
 
+
+TAIL_LIMIT = 1000  # TODO: make it configurable from UI
+
+
 class ServicesHandler:
     def __init__(self):
         self._lock = threading.Lock()
@@ -12,6 +16,7 @@ class ServicesHandler:
         self.states_handler = ConfigsHandler(file_name="button_states.json")
         self.paths_handler = ConfigsHandler()  # ../conf/saved_paths.txt
         self.positions_handler = ConfigsHandler(file_name="positions.json")
+        self._filestats = {}  # key -> {"mtime": float, "size": int}
 
 
     def _key(self, file_path: str, template: str) -> str:
@@ -121,64 +126,93 @@ class ServicesHandler:
         from xml.etree import ElementTree as ET
         from datetime import datetime
     
-        def parse_iso(s):
+        ns = {"e": "http://schemas.microsoft.com/win/2004/08/events/event"}
+    
+        def parse_iso(s: str | None):
+            if not s: return None
             try:
-                return datetime.fromisoformat(s.replace("Z", "+00:00")) if s else None
+                return datetime.fromisoformat(s.replace("Z", "+00:00"))
             except Exception:
                 return None
     
+        # ---- load last position (fallback to legacy template key if present) ----
         pos = self.positions_handler.get_saved_paths() or {}
-        state = pos.get(key) or {}
+        state = pos.get(key) or pos.get(template) or {}
         last_id = int(state.get("last_id", 0))
         last_ts = state.get("last_ts")
         last_dt = parse_iso(last_ts)
     
-        # 1) init once: use latest-by-timestamp
-        if last_ts is None:
+        # ---- init once: set position to latest-by-timestamp (ID tiebreaker) ----
+        if last_dt is None:
+            latest_dt, latest_id = None, 0
             try:
                 with Evtx(file_path) as log:
-                    rec = max(log.records(), key=lambda r: r.timestamp())  # latest
-                    root = ET.fromstring(rec.xml())
-                    ns = {"e": "http://schemas.microsoft.com/win/2004/08/events/event"}
-                    last_id = int(root.findtext("./e:System/e:EventRecordID", namespaces=ns) or 0)
-                    tc = root.find("./e:System/e:TimeCreated", namespaces=ns)
-                    last_ts = tc.get("SystemTime") if tc is not None else None
-                    last_dt = parse_iso(last_ts)
+                    for rec in log.records():
+                        root = ET.fromstring(rec.xml())
+                        rid = int(root.findtext("./e:System/e:EventRecordID", namespaces=ns) or 0)
+                        tc = root.find("./e:System/e:TimeCreated", namespaces=ns)
+                        ts = tc.get("SystemTime") if tc is not None else None
+                        dt = parse_iso(ts)
+                        if dt is None:  # skip undated
+                            continue
+                        if latest_dt is None or dt > latest_dt or (dt == latest_dt and rid > latest_id):
+                            latest_dt, latest_id = dt, rid
+                last_dt, last_id = latest_dt, latest_id
+                last_ts = last_dt.isoformat() if last_dt else None
                 pos[key] = {"last_id": last_id, "last_ts": last_ts}
                 self.positions_handler.save_mapping(pos)
                 print(f"[evtx][{key}] init last_id={last_id} last_ts={last_ts}")
-            except ValueError:
-                # empty log
-                pos[key] = {"last_id": 0, "last_ts": None}
-                self.positions_handler.save_mapping(pos)
+            except Exception as e:
+                print(f"[evtx][{key}] init error: {e}")
     
-        # 2) tail: emit events after (ts,id)
+        # ---- tail: emit only events strictly after (timestamp, then id) ----
         while not stop_flag.is_set():
             new_id, new_ts, new_dt = last_id, last_ts, last_dt
             try:
+                if not os.path.exists(file_path):
+                    if stop_flag.wait(1.0): break
+                    continue
+    
                 with Evtx(file_path) as log:
                     for rec in log.records():
                         xml_str = rec.xml()
                         root = ET.fromstring(xml_str)
-                        ns = {"e": "http://schemas.microsoft.com/win/2004/08/events/event"}
+    
                         rid = int(root.findtext("./e:System/e:EventRecordID", namespaces=ns) or 0)
                         tcel = root.find("./e:System/e:TimeCreated", namespaces=ns)
                         ts = tcel.get("SystemTime") if tcel is not None else None
                         dt = parse_iso(ts)
     
-                        if (last_dt is None) or (dt and (dt > last_dt or (dt == last_dt and rid > last_id))):
-                            print(f"[evtx][{key}] NEW id={rid} ts={ts}")
-                            print(xml_str)  # << debug: print full XML of new event
+                        is_new = False
+                        if last_dt is None and dt is not None:
+                            is_new = True
+                        elif dt is None and rid > last_id:
+                            is_new = True
+                        elif dt and last_dt and (dt > last_dt or (dt == last_dt and rid > last_id)):
+                            is_new = True
+    
+                        if not is_new:
+                            continue
+    
+                        print(f"[evtx][{key}] NEW id={rid} ts={ts}")
+                        #print(xml_str)  # debug: full XML
+    
+                        # advance in-memory high-watermark
+                        if (new_dt is None and dt is not None) or \
+                        (dt and (dt > new_dt or (dt == new_dt and rid > new_id))):
                             new_id, new_ts, new_dt = rid, ts, dt
+    
             except Exception as e:
                 print(f"[evtx][{key}] error: {e}")
     
+            # persist if moved
             if new_id != last_id or new_ts != last_ts:
                 last_id, last_ts, last_dt = new_id, new_ts, new_dt
                 pos[key] = {"last_id": last_id, "last_ts": last_ts}
                 self.positions_handler.save_mapping(pos)
     
             if stop_flag.wait(0.5): break
+
 
 
 
