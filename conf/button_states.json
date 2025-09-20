@@ -3,8 +3,16 @@
     "enabled": true,
     "started": true
   },
+  "Security.evtx_pass_through_test.yaml": {
+    "enabled": true,
+    "started": false
+  },
   "Application.evtx_generic_template.yaml": {
     "enabled": true,
-    "started": true
+    "started": false
+  },
+  "Application.evtx_spp_events.yaml": {
+    "enabled": true,
+    "started": false
   }
 }
