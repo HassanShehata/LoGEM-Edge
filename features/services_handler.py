@@ -4,6 +4,7 @@ import os
 import time
 from typing import Dict, Tuple, Optional, List
 from configs_handler import ConfigsHandler
+from collections import deque
 
 
 TAIL_LIMIT = 1000  # TODO: make it configurable from UI
@@ -172,9 +173,13 @@ class ServicesHandler:
                 if not os.path.exists(file_path):
                     if stop_flag.wait(1.0): break
                     continue
-    
+
+
                 with Evtx(file_path) as log:
-                    for rec in log.records():
+                    recs = sorted(log.records(), key=lambda r: r.timestamp())
+                    tail = recs[-TAIL_LIMIT:] if len(recs) > TAIL_LIMIT else recs
+                    bong=0
+                    for rec in tail:
                         xml_str = rec.xml()
                         root = ET.fromstring(xml_str)
     
@@ -192,6 +197,8 @@ class ServicesHandler:
                             is_new = True
     
                         if not is_new:
+                            bong=bong+1
+                            #print("no hit {}".format(bong))
                             continue
     
                         print(f"[evtx][{key}] NEW id={rid} ts={ts}")
