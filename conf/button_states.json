@@ -3,10 +3,6 @@
     "enabled": false,
     "started": false
   },
-  "Security.evtx_pass_through_test.yaml": {
-    "enabled": false,
-    "started": false
-  },
   "Application.evtx_generic_template.yaml": {
     "enabled": false,
     "started": false
@@ -15,7 +11,7 @@
     "enabled": false,
     "started": false
   },
-  "hello.x_generic_template.yaml": {
+  "Security.evtx_pass_through_test.yaml": {
     "enabled": false,
     "started": false
   }

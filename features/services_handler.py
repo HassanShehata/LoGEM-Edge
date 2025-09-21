@@ -185,7 +185,10 @@ class ServicesHandler:
             latest_dt, latest_id = None, 0
             try:
                 with Evtx(file_path) as log:
-                    for rec in log.records():
+                    recs = sorted(log.records(), key=lambda r: r.timestamp())
+                    tail = recs[-TAIL_LIMIT:] if len(recs) > TAIL_LIMIT else recs
+                    print("bonga init")
+                    for rec in tail:
                         root = ET.fromstring(rec.xml())
                         rid = int(root.findtext("./e:System/e:EventRecordID", namespaces=ns) or 0)
                         tc = root.find("./e:System/e:TimeCreated", namespaces=ns)
