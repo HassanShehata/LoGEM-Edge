@@ -45,6 +45,14 @@ class ServicesHandler:
         with self._lock:
             if key in self.active_services:
                 self._stop_locked(key)
+        
+        # Clear position when service is deleted/disabled
+        pos = self.positions_handler.get_saved_paths() or {}
+        if key in pos:
+            pos.pop(key)
+            self.positions_handler.save_mapping(pos)
+            print(f"[delete] cleared position for {key}")
+        
         print(f"[delete] {key}")
         return True
 
@@ -117,12 +125,41 @@ class ServicesHandler:
                 continue
             self.start_service(full_path, template)
 
+    
     def _monitor_loop(self, file_path: str, template: str, stop_flag: threading.Event):
         key = self._key(file_path, template)
-        if not file_path.lower().endswith(".evtx"):
-            while not stop_flag.wait(0.5): pass
+    
+        # -------- helper: detect text file --------
+        def is_text_file(path, blocksize=512):
+            try:
+                with open(path, "rb") as f:
+                    chunk = f.read(blocksize)
+                chunk.decode("utf-8")
+                return True
+            except Exception:
+                return False
+    
+        # -------- plain text logs --------
+        if is_text_file(file_path) and not file_path.lower().endswith(".evtx"):
+            pos = self.positions_handler.get_saved_paths() or {}
+            state = pos.get(key) or pos.get(template) or {}
+            last_pos = int(state.get("last_pos", 0))
+    
+            while not stop_flag.is_set():
+                try:
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        f.seek(last_pos)
+                        for line in f:
+                            print(f"[text][{key}] NEW line={line.strip()}")
+                        last_pos = f.tell()
+                    pos[key] = {"last_pos": last_pos}
+                    self.positions_handler.save_mapping(pos)
+                except Exception as e:
+                    print(f"[text][{key}] error: {e}")
+                if stop_flag.wait(0.5): break
             return
     
+        # -------- EVTX logs --------
         from Evtx.Evtx import Evtx
         from xml.etree import ElementTree as ET
         from datetime import datetime
@@ -136,14 +173,14 @@ class ServicesHandler:
             except Exception:
                 return None
     
-        # ---- load last position (fallback to legacy template key if present) ----
+        # ---- load last position ----
         pos = self.positions_handler.get_saved_paths() or {}
         state = pos.get(key) or pos.get(template) or {}
         last_id = int(state.get("last_id", 0))
         last_ts = state.get("last_ts")
         last_dt = parse_iso(last_ts)
     
-        # ---- init once: set position to latest-by-timestamp (ID tiebreaker) ----
+        # ---- init once ----
         if last_dt is None:
             latest_dt, latest_id = None, 0
             try:
@@ -154,7 +191,7 @@ class ServicesHandler:
                         tc = root.find("./e:System/e:TimeCreated", namespaces=ns)
                         ts = tc.get("SystemTime") if tc is not None else None
                         dt = parse_iso(ts)
-                        if dt is None:  # skip undated
+                        if dt is None:
                             continue
                         if latest_dt is None or dt > latest_dt or (dt == latest_dt and rid > latest_id):
                             latest_dt, latest_id = dt, rid
@@ -166,19 +203,18 @@ class ServicesHandler:
             except Exception as e:
                 print(f"[evtx][{key}] init error: {e}")
     
-        # ---- tail: emit only events strictly after (timestamp, then id) ----
+        # ---- tail loop ----
         while not stop_flag.is_set():
             new_id, new_ts, new_dt = last_id, last_ts, last_dt
             try:
                 if not os.path.exists(file_path):
                     if stop_flag.wait(1.0): break
                     continue
-
-
+    
                 with Evtx(file_path) as log:
                     recs = sorted(log.records(), key=lambda r: r.timestamp())
                     tail = recs[-TAIL_LIMIT:] if len(recs) > TAIL_LIMIT else recs
-                    bong=0
+                    bong = 0
                     for rec in tail:
                         xml_str = rec.xml()
                         root = ET.fromstring(xml_str)
@@ -197,14 +233,11 @@ class ServicesHandler:
                             is_new = True
     
                         if not is_new:
-                            bong=bong+1
-                            #print("no hit {}".format(bong))
+                            bong += 1
                             continue
     
                         print(f"[evtx][{key}] NEW id={rid} ts={ts}")
-                        #print(xml_str)  # debug: full XML
     
-                        # advance in-memory high-watermark
                         if (new_dt is None and dt is not None) or \
                         (dt and (dt > new_dt or (dt == new_dt and rid > new_id))):
                             new_id, new_ts, new_dt = rid, ts, dt
@@ -212,14 +245,12 @@ class ServicesHandler:
             except Exception as e:
                 print(f"[evtx][{key}] error: {e}")
     
-            # persist if moved
             if new_id != last_id or new_ts != last_ts:
                 last_id, last_ts, last_dt = new_id, new_ts, new_dt
                 pos[key] = {"last_id": last_id, "last_ts": last_ts}
                 self.positions_handler.save_mapping(pos)
     
             if stop_flag.wait(0.5): break
-
 
 
 

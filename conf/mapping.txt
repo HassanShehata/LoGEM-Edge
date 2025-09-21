@@ -6,5 +6,8 @@
   "C:\\Windows\\System32\\winevt\\Logs\\Security.evtx": [
     "generic_template.yaml",
     "pass_through_test.yaml"
+  ],
+  "C:\\Users\\hassa\\Desktop\\hello.x": [
+    "generic_template.yaml"
   ]
 }
