@@ -1,1 +1,10 @@
-{}
+{
+  "Application.evtx_spp_events.yaml": {
+    "last_id": 18336,
+    "last_ts": "2025-09-22T14:46:04.017036+00:00"
+  },
+  "Security.evtx_generic_template.yaml": {
+    "last_id": 273904,
+    "last_ts": "2025-09-22 16:34:19.604132+00:00"
+  }
+}

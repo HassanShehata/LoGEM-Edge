@@ -5,6 +5,8 @@ import time
 from typing import Dict, Tuple, Optional, List
 from configs_handler import ConfigsHandler
 from llm_handler import LLMHandler
+from template_handler import TemplateHandler
+
 
 TAIL_LIMIT = 1000  # TODO: make it configurable from UI
 
@@ -116,15 +118,54 @@ class ServicesHandler:
         for key, st in (states or {}).items():
             if not isinstance(st, dict):
                 continue
-            if not (st.get("enabled") and st.get("started") and st.get("passthrough")):
+            if not (st.get("enabled") and st.get("started")):
                 continue
-
             basename, template = self._split_key(key)
             full_path = self._find_full_path(basename)
             if not full_path:
                 print(f"[autostart] path not found for {basename}, skip")
                 continue
+            print("Auto Starting..")
             self.start_service(full_path, template, st.get("passthrough"))
+
+
+    def _llm_parser(self, logline: str, template_name: str):
+        try:
+            full_template_path=os.path.join("../templates",template_name)
+            #print(f"\n\n[PROSESSING]:\n\n{full_template_path} ON {logline}\n\n")
+            handler = TemplateHandler(full_template_path)
+            model_map_handler = ConfigsHandler(file_name="modelsmap.json")
+            model_name = model_map_handler.get_saved_paths().get(template_name, [None])[0]
+
+            # Check if log matches template type criteria
+            if handler.matches_log(logline):
+                
+                prompt = handler.get_prompt()
+                model_template = handler.get_model_template()
+                model_params = handler.get_model_params()
+                output_format = handler.get_output_format()    
+                constructed_prompt = f"{prompt}\nRAW_LOG: {logline}"
+                full_prompt = model_template.replace("{{ .Prompt }}", constructed_prompt)
+            
+                # Infer with sanitized log line
+                llm = LLMHandler(model_name=model_name, n_ctx=2048)
+                response, latency = llm.infer(
+                    full_prompt,
+                    model_params=model_params,
+                    max_tokens=model_params.get("max_tokens", 2048)
+                )
+                print(f"[LLM] {response}\n\nTime: {latency} sec")
+                '''
+                # Convert to SYSLOG format if needed
+                if output_format.upper() == "SYSLOG":
+                    formatted_response = handler.json_to_syslog(response)
+                    result_box.value = f"{formatted_response}\n\nTime: {latency} sec"
+                else:
+                    result_box.value = f"{response}\n\nTime: {latency} sec"
+                '''
+        
+        except Exception as e:
+            print(f"\n\n[ERROR]:\n\n{e}\n\n")
 
     
     def _monitor_loop(self, file_path: str, template: str, stop_flag: threading.Event, passthrough: bool):
@@ -151,13 +192,12 @@ class ServicesHandler:
                 try:
                     with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                         f.seek(last_pos)
+                        
                         for line in f:
-                            
                             ################ PARSING LOGIC ################
                             if not passthrough:
                                 print(f"[text TO LLM][{key}] NEW line={line.strip()}")
-
-                            
+                                self._llm_parser(line, template)
                             else:
                                 print(f"[text][{key}] NEW line={line.strip()}")
                             #
@@ -254,10 +294,9 @@ class ServicesHandler:
                         ################ PARSING LOGIC ################
                         if not passthrough:
                             print(f"[evtx TO LLM][{key}] NEW id={rid} ts={ts}")
+                            self._llm_parser(xml_str, template)
                         else:
                             print(f"[evtx][{key}] NEW id={rid} ts={ts}")
-                        #
-                        #
                         ##############################################
                         
     
