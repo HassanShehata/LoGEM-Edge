@@ -91,25 +91,8 @@ def sample_test_tab():
                             break
                         
                         xml_content = record.xml()
-                        '''
-                        # Extract readable text from XML
-                        import xml.etree.ElementTree as ET
-                        root = ET.fromstring(xml_content)
-                        
-                        # Try to find event data
-                        event_data = ""
-                        for elem in root.iter():
-                            if elem.text and elem.text.strip():
-                                event_data += elem.text.strip() + " "
-                        
-                        if event_data:
-                            clean_data = event_data[:200]  # Limit length
-                            options.append(ft.dropdown.Option(clean_data))
-                        '''
                         options.append(ft.dropdown.Option(xml_content))
                         count += 1
-                        
-
                         
             except Exception as e:
                 options.append(ft.dropdown.Option(f"EVTX error: {str(e)[:100]}"))
@@ -157,13 +140,6 @@ def sample_test_tab():
             return
 
         sanitized = log_line.strip()
-
-        '''
-        # Flatten the log line: remove tabs/newlines and collapse multiple spaces
-        sanitized = log_line.replace("\t", " ").replace("\n", " ").replace("\n\t", " ")
-        while "  " in sanitized:
-            sanitized = sanitized.replace("  ", " ")
-        '''
 
         template_path = os.path.join("..", "templates", template_name)
         handler = TemplateHandler(template_path)

@@ -4,8 +4,7 @@ import os
 import time
 from typing import Dict, Tuple, Optional, List
 from configs_handler import ConfigsHandler
-from collections import deque
-
+from llm_handler import LLMHandler
 
 TAIL_LIMIT = 1000  # TODO: make it configurable from UI
 
@@ -56,16 +55,17 @@ class ServicesHandler:
         print(f"[delete] {key}")
         return True
 
-    def start_service(self, file_path: str, template: str) -> bool:
+    def start_service(self, file_path: str, template: str, passthrough: bool) -> bool:
         key = self._key(file_path, template)
         with self._lock:
             if key in self.active_services:
                 print(f"[start] already running: {key}")
                 return True
+            print(f"[TEMPLATE] {template}")
             stop_flag = threading.Event()
             t = threading.Thread(
                 target=self._monitor_loop,
-                args=(file_path, template, stop_flag),
+                args=(file_path, template, stop_flag, passthrough),
                 name=f"Monitor-{key}",
                 daemon=True,
             )
@@ -73,6 +73,7 @@ class ServicesHandler:
             t.start()
         print(f"[start] {key}")
         return True
+
 
     def stop_service(self, file_path: str, template: str) -> bool:
         key = self._key(file_path, template)
@@ -115,7 +116,7 @@ class ServicesHandler:
         for key, st in (states or {}).items():
             if not isinstance(st, dict):
                 continue
-            if not (st.get("enabled") and st.get("started")):
+            if not (st.get("enabled") and st.get("started") and st.get("passthrough")):
                 continue
 
             basename, template = self._split_key(key)
@@ -123,11 +124,12 @@ class ServicesHandler:
             if not full_path:
                 print(f"[autostart] path not found for {basename}, skip")
                 continue
-            self.start_service(full_path, template)
+            self.start_service(full_path, template, st.get("passthrough"))
 
     
-    def _monitor_loop(self, file_path: str, template: str, stop_flag: threading.Event):
+    def _monitor_loop(self, file_path: str, template: str, stop_flag: threading.Event, passthrough: bool):
         key = self._key(file_path, template)
+        model_map_handler = ConfigsHandler(file_name="modelsmap.json")
     
         # -------- helper: detect text file --------
         def is_text_file(path, blocksize=512):
@@ -150,7 +152,18 @@ class ServicesHandler:
                     with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                         f.seek(last_pos)
                         for line in f:
-                            print(f"[text][{key}] NEW line={line.strip()}")
+                            
+                            ################ PARSING LOGIC ################
+                            if not passthrough:
+                                print(f"[text TO LLM][{key}] NEW line={line.strip()}")
+
+                            
+                            else:
+                                print(f"[text][{key}] NEW line={line.strip()}")
+                            #
+                            #
+                            ##############################################
+
                         last_pos = f.tell()
                     pos[key] = {"last_pos": last_pos}
                     self.positions_handler.save_mapping(pos)
@@ -187,7 +200,6 @@ class ServicesHandler:
                 with Evtx(file_path) as log:
                     recs = sorted(log.records(), key=lambda r: r.timestamp())
                     tail = recs[-TAIL_LIMIT:] if len(recs) > TAIL_LIMIT else recs
-                    print("bonga init")
                     for rec in tail:
                         root = ET.fromstring(rec.xml())
                         rid = int(root.findtext("./e:System/e:EventRecordID", namespaces=ns) or 0)
@@ -211,7 +223,7 @@ class ServicesHandler:
             new_id, new_ts, new_dt = last_id, last_ts, last_dt
             try:
                 if not os.path.exists(file_path):
-                    if stop_flag.wait(1.0): break
+                    if stop_flag.wait(0.1): break
                     continue
     
                 with Evtx(file_path) as log:
@@ -239,7 +251,15 @@ class ServicesHandler:
                             bong += 1
                             continue
     
-                        print(f"[evtx][{key}] NEW id={rid} ts={ts}")
+                        ################ PARSING LOGIC ################
+                        if not passthrough:
+                            print(f"[evtx TO LLM][{key}] NEW id={rid} ts={ts}")
+                        else:
+                            print(f"[evtx][{key}] NEW id={rid} ts={ts}")
+                        #
+                        #
+                        ##############################################
+                        
     
                         if (new_dt is None and dt is not None) or \
                         (dt and (dt > new_dt or (dt == new_dt and rid > new_id))):
@@ -253,7 +273,7 @@ class ServicesHandler:
                 pos[key] = {"last_id": last_id, "last_ts": last_ts}
                 self.positions_handler.save_mapping(pos)
     
-            if stop_flag.wait(0.5): break
+            if stop_flag.wait(0.1): break
 
 
 
