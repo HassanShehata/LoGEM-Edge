@@ -1,12 +1,7 @@
 {
   "Security.evtx_generic_template.yaml": {
-    "enabled": true,
-    "started": true,
-    "passthrough": false
-  },
-  "Application.evtx_spp_events.yaml": {
-    "enabled": true,
-    "started": true,
+    "enabled": false,
+    "started": false,
     "passthrough": false
   }
 }

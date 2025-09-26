@@ -293,8 +293,11 @@ class ServicesHandler:
     
                         ################ PARSING LOGIC ################
                         if not passthrough:
+                            print(f"---------------------------------------------------------------------")
                             print(f"[evtx TO LLM][{key}] NEW id={rid} ts={ts}")
+                            print(f"\n{xml_str}\n")
                             self._llm_parser(xml_str, template)
+                            print(f"---------------------------------------------------------------------")
                         else:
                             print(f"[evtx][{key}] NEW id={rid} ts={ts}")
                         ##############################################
@@ -303,14 +306,15 @@ class ServicesHandler:
                         if (new_dt is None and dt is not None) or \
                         (dt and (dt > new_dt or (dt == new_dt and rid > new_id))):
                             new_id, new_ts, new_dt = rid, ts, dt
+
+                        if new_id != last_id or new_ts != last_ts:
+                            last_id, last_ts, last_dt = new_id, new_ts, new_dt
+                            pos[key] = {"last_id": last_id, "last_ts": last_ts}
+                            self.positions_handler.save_mapping(pos)
     
             except Exception as e:
                 print(f"[evtx][{key}] error: {e}")
-    
-            if new_id != last_id or new_ts != last_ts:
-                last_id, last_ts, last_dt = new_id, new_ts, new_dt
-                pos[key] = {"last_id": last_id, "last_ts": last_ts}
-                self.positions_handler.save_mapping(pos)
+
     
             if stop_flag.wait(0.1): break
 
