@@ -202,7 +202,9 @@ class ServicesHandler:
                         f.seek(last_pos)
                         
                         for line in f:
-                            if True:
+                            if stop_flag.is_set():
+                                return
+                            if len(line) > 2:
                                 ################ PARSING LOGIC ################
                                 if not passthrough:
                                     print(f"[text TO LLM][{key}] NEW line={line.strip()}")
@@ -253,6 +255,8 @@ class ServicesHandler:
                     recs = sorted(log.records(), key=lambda r: r.timestamp())
                     tail = recs[-TAIL_LIMIT:] if len(recs) > TAIL_LIMIT else recs
                     for rec in tail:
+                        if stop_flag.is_set():
+                            return
                         root = ET.fromstring(rec.xml())
                         rid = int(root.findtext("./e:System/e:EventRecordID", namespaces=ns) or 0)
                         tc = root.find("./e:System/e:TimeCreated", namespaces=ns)
@@ -283,6 +287,8 @@ class ServicesHandler:
                     tail = recs[-TAIL_LIMIT:] if len(recs) > TAIL_LIMIT else recs
                     bong = 0
                     for rec in tail:
+                        if stop_flag.is_set():
+                            return
                         xml_str = rec.xml()
                         root = ET.fromstring(xml_str)
     
