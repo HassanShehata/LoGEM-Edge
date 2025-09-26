@@ -7,7 +7,10 @@
     "generic_template.yaml",
     "pass_through_test.yaml"
   ],
-  "C:\\Users\\hassa\\Desktop\\hello.x": [
+  "D:\\AI Projects\\LoGEM-Edge\\unit_tests\\helo.log": [
+    "generic_template.yaml"
+  ],
+  "C:\\Windows\\System32\\winevt\\Logs\\Windows PowerShell.evtx": [
     "generic_template.yaml"
   ]
 }

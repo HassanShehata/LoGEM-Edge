@@ -1,2 +1,4 @@
 C:\Windows\System32\winevt\Logs\Application.evtx
 C:\Windows\System32\winevt\Logs\Security.evtx
+D:\AI Projects\LoGEM-Edge\unit_tests\helo.log
+C:\Windows\System32\winevt\Logs\Windows PowerShell.evtx

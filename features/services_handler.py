@@ -6,6 +6,7 @@ from typing import Dict, Tuple, Optional, List
 from configs_handler import ConfigsHandler
 from llm_handler import LLMHandler
 from template_handler import TemplateHandler
+import json
 
 
 TAIL_LIMIT = 1000  # TODO: make it configurable from UI
@@ -154,18 +155,17 @@ class ServicesHandler:
                     model_params=model_params,
                     max_tokens=model_params.get("max_tokens", 2048)
                 )
-                print(f"[LLM] {response}\n\nTime: {latency} sec")
-                '''
+                #print(f"[LLM] {response}\n\nTime: {latency} sec")
                 # Convert to SYSLOG format if needed
                 if output_format.upper() == "SYSLOG":
                     formatted_response = handler.json_to_syslog(response)
-                    result_box.value = f"{formatted_response}\n\nTime: {latency} sec"
+                    return formatted_response, latency
                 else:
-                    result_box.value = f"{response}\n\nTime: {latency} sec"
-                '''
+                    return response, latency
         
         except Exception as e:
-            print(f"\n\n[ERROR]:\n\n{e}\n\n")
+            #print(f"\n\n[ERROR]:\n\n{e}\n\n")
+            return "LLMERROR", f"\n\n[LLM ERROR]:\n\n{e}\n\n"
 
     
     def _monitor_loop(self, file_path: str, template: str, stop_flag: threading.Event, passthrough: bool):
@@ -181,6 +181,14 @@ class ServicesHandler:
                 return True
             except Exception:
                 return False
+        #--------------- JSON CHECKER -------
+
+        def is_valid_json(s):
+            try:
+                json.loads(s)
+                return True
+            except:
+                return False
     
         # -------- plain text logs --------
         if is_text_file(file_path) and not file_path.lower().endswith(".evtx"):
@@ -194,16 +202,20 @@ class ServicesHandler:
                         f.seek(last_pos)
                         
                         for line in f:
-                            ################ PARSING LOGIC ################
-                            if not passthrough:
-                                print(f"[text TO LLM][{key}] NEW line={line.strip()}")
-                                self._llm_parser(line, template)
-                            else:
-                                print(f"[text][{key}] NEW line={line.strip()}")
-                            #
-                            #
-                            ##############################################
-
+                            if True:
+                                ################ PARSING LOGIC ################
+                                if not passthrough:
+                                    print(f"[text TO LLM][{key}] NEW line={line.strip()}")
+                                    response, latency= self._llm_parser(line, template)
+                                    is_json = is_valid_json(response)
+                                    if not is_json:
+                                        print(f"[FALLBACK] {line}\n\nTime: {latency} sec")
+                                    else:
+                                        print(f"[LLM] {response}\n\nTime: {latency} sec")
+                                else:
+                                    print(f"[text][{key}] NEW line={line.strip()}")
+                                ##############################################
+    
                         last_pos = f.tell()
                     pos[key] = {"last_pos": last_pos}
                     self.positions_handler.save_mapping(pos)
@@ -293,13 +305,16 @@ class ServicesHandler:
     
                         ################ PARSING LOGIC ################
                         if not passthrough:
-                            print(f"---------------------------------------------------------------------")
                             print(f"[evtx TO LLM][{key}] NEW id={rid} ts={ts}")
-                            print(f"\n{xml_str}\n")
-                            self._llm_parser(xml_str, template)
-                            print(f"---------------------------------------------------------------------")
+                            response, latency= self._llm_parser(xml_str, template)
+                            is_json = is_valid_json(response)
+                            if not is_json:
+                                print(f"[FALLBACK] {xml_str}\n\nTime: {latency} sec")
+                            else:
+                                print(f"[LLM] {response}\n\nTime: {latency} sec")
                         else:
-                            print(f"[evtx][{key}] NEW id={rid} ts={ts}")
+                            print(f"[evtx passthrough][{key}] NEW id={rid} ts={ts}")
+                            
                         ##############################################
                         
     

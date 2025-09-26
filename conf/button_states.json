@@ -1,7 +1,17 @@
 {
+  "helo.log_generic_template.yaml": {
+    "enabled": true,
+    "started": true,
+    "passthrough": false
+  },
+  "Windows PowerShell.evtx_generic_template.yaml": {
+    "enabled": true,
+    "started": true,
+    "passthrough": false
+  },
   "Security.evtx_generic_template.yaml": {
-    "enabled": false,
-    "started": false,
+    "enabled": true,
+    "started": true,
     "passthrough": false
   }
 }
