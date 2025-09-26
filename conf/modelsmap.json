@@ -1,6 +1,6 @@
 {
   "spp_events.yaml": [
-    "logem-win.gguf",
+    "Qwen3-1.7B-Q3_K_L.gguf",
     0.2,
     5,
     5

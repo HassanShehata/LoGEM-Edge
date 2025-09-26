@@ -8,7 +8,7 @@ import json
 
 
 class LLMHandler:
-    def __init__(self, model_name, model_dir="../../models", n_ctx=4096, n_threads=None, n_batch=512, n_gpu_layers=-1):
+    def __init__(self, model_name, model_dir="../../models", n_ctx=2048, n_threads=None, n_batch=64, n_gpu_layers=-1):
         self.model_path = os.path.abspath(os.path.join(model_dir, model_name))
         self.n_ctx = n_ctx
         self.n_threads = n_threads or multiprocessing.cpu_count()
@@ -40,9 +40,9 @@ class LLMHandler:
                 n_gpu_layers=self.n_gpu_layers,
                 verbose=False,
                 # NEW PERFORMANCE PARAMETERS
-                n_ubatch=512,        # Process tokens in larger micro-batches
-                flash_attn=True,     # Enable flash attention for speed
-                use_mmap=True,       # Memory mapping for faster loading
+                #n_ubatch=512,        # Process tokens in larger micro-batches
+                #flash_attn=True,     # Enable flash attention for speed
+                #use_mmap=True,       # Memory mapping for faster loading
                 use_mlock=True,      # Lock model in RAM
             )
 

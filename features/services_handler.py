@@ -9,12 +9,14 @@ from template_handler import TemplateHandler
 import json
 
 
-TAIL_LIMIT = 1000  # TODO: make it configurable from UI
+TAIL_LIMIT = 100  # TODO: make it configurable from UI
 
 
 class ServicesHandler:
     def __init__(self):
         self._lock = threading.Lock()
+        self._llm_pool = {}
+        self._llm_locks = {}
         self.active_services: Dict[str, Dict[str, object]] = {}
         self.states_handler = ConfigsHandler(file_name="button_states.json")
         self.paths_handler = ConfigsHandler()  # ../conf/saved_paths.txt
@@ -151,20 +153,28 @@ class ServicesHandler:
             
                 # Infer with sanitized log line
                 timeout_occurred = threading.Event()
-                timer = threading.Timer(30.0, lambda: timeout_occurred.set())
+                timer = threading.Timer(60.0, lambda: timeout_occurred.set())
                 try:
-                    llm = LLMHandler(model_name=model_name, n_ctx=2048)
-                    timer.start()
-                    response, latency = llm.infer(
-                        full_prompt,
-                        model_params=model_params,
-                        max_tokens=model_params.get("max_tokens", 2048)
-                    )
+                    if model_name not in self._llm_pool:
+                        with self._lock:
+                            if model_name not in self._llm_pool:  # Double-check pattern
+                                self._llm_pool[model_name] = LLMHandler(model_name=model_name, n_ctx=2048)
+                                self._llm_locks[model_name] = threading.Lock()
+                    llm = self._llm_pool[model_name]
+                    llm_lock = self._llm_locks[model_name]
+
+                    with llm_lock:
+                        timer.start()
+                        response, latency = llm.infer(
+                            full_prompt,
+                            model_params=model_params,
+                            max_tokens=model_params.get("max_tokens", 2048)
+                        )
                 finally:
                     timer.cancel()
                 #print(f"[LLM] {response}\n\nTime: {latency} sec")
                 if timeout_occurred.is_set():
-                    return "TIMEOUT", "LLM call timed out after 30 seconds"
+                    return "TIMEOUT", "LLM call timed out after 60 seconds"
                 
                 # Convert to SYSLOG format if needed
                 if output_format.upper() == "SYSLOG":
@@ -233,7 +243,7 @@ class ServicesHandler:
                     self.positions_handler.save_mapping(pos)
                 except Exception as e:
                     print(f"[text][{key}] error: {e}")
-                if stop_flag.wait(0.5): break
+                if stop_flag.wait(1): break
             return
     
         # -------- EVTX logs --------
@@ -265,8 +275,6 @@ class ServicesHandler:
                     recs = sorted(log.records(), key=lambda r: r.timestamp())
                     tail = recs[-TAIL_LIMIT:] if len(recs) > TAIL_LIMIT else recs
                     for rec in tail:
-                        if stop_flag.is_set():
-                            return
                         root = ET.fromstring(rec.xml())
                         rid = int(root.findtext("./e:System/e:EventRecordID", namespaces=ns) or 0)
                         tc = root.find("./e:System/e:TimeCreated", namespaces=ns)
@@ -289,7 +297,7 @@ class ServicesHandler:
             new_id, new_ts, new_dt = last_id, last_ts, last_dt
             try:
                 if not os.path.exists(file_path):
-                    if stop_flag.wait(0.1): break
+                    if stop_flag.wait(1): break
                     continue
     
                 with Evtx(file_path) as log:
@@ -347,7 +355,7 @@ class ServicesHandler:
                 print(f"[evtx][{key}] error: {e}")
 
     
-            if stop_flag.wait(0.1): break
+            if stop_flag.wait(1): break
 
 
 
