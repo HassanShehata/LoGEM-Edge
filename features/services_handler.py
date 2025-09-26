@@ -131,6 +131,7 @@ class ServicesHandler:
 
 
     def _llm_parser(self, logline: str, template_name: str):
+
         try:
             full_template_path=os.path.join("../templates",template_name)
             #print(f"\n\n[PROSESSING]:\n\n{full_template_path} ON {logline}\n\n")
@@ -149,13 +150,22 @@ class ServicesHandler:
                 full_prompt = model_template.replace("{{ .Prompt }}", constructed_prompt)
             
                 # Infer with sanitized log line
-                llm = LLMHandler(model_name=model_name, n_ctx=2048)
-                response, latency = llm.infer(
-                    full_prompt,
-                    model_params=model_params,
-                    max_tokens=model_params.get("max_tokens", 2048)
-                )
+                timeout_occurred = threading.Event()
+                timer = threading.Timer(30.0, lambda: timeout_occurred.set())
+                try:
+                    llm = LLMHandler(model_name=model_name, n_ctx=2048)
+                    timer.start()
+                    response, latency = llm.infer(
+                        full_prompt,
+                        model_params=model_params,
+                        max_tokens=model_params.get("max_tokens", 2048)
+                    )
+                finally:
+                    timer.cancel()
                 #print(f"[LLM] {response}\n\nTime: {latency} sec")
+                if timeout_occurred.is_set():
+                    return "TIMEOUT", "LLM call timed out after 30 seconds"
+                
                 # Convert to SYSLOG format if needed
                 if output_format.upper() == "SYSLOG":
                     formatted_response = handler.json_to_syslog(response)

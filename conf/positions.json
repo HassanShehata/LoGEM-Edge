@@ -1,6 +1,9 @@
 {
   "Security.evtx_generic_template.yaml": {
-    "last_id": 296718,
-    "last_ts": "2025-09-26 16:41:35.236290+00:00"
+    "last_id": 296897,
+    "last_ts": "2025-09-26 17:38:12.116617+00:00"
+  },
+  "helo.log_generic_template.yaml": {
+    "last_pos": 1727
   }
 }
