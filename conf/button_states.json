@@ -1,17 +1,17 @@
 {
   "Security.evtx_generic_template_all_keys.yaml": {
     "enabled": true,
-    "started": false,
+    "started": true,
     "passthrough": false
   },
   "helo.log_generic_template.yaml": {
     "enabled": true,
-    "started": false,
+    "started": true,
     "passthrough": false
   },
   "Windows PowerShell.evtx_generic_template.yaml": {
     "enabled": true,
-    "started": false,
+    "started": true,
     "passthrough": false
   }
 }

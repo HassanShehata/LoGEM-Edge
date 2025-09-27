@@ -9,19 +9,19 @@ from template_handler import TemplateHandler
 import json
 
 
-TAIL_LIMIT = 100  # TODO: make it configurable from UI
+TAIL_LIMIT = 10  # TODO: make it configurable from UI
 
 
 class ServicesHandler:
     def __init__(self):
         self._lock = threading.Lock()
-        self._llm_pool = {}
-        self._llm_locks = {}
         self.active_services: Dict[str, Dict[str, object]] = {}
         self.states_handler = ConfigsHandler(file_name="button_states.json")
         self.paths_handler = ConfigsHandler()  # ../conf/saved_paths.txt
         self.positions_handler = ConfigsHandler(file_name="positions.json")
         self._filestats = {}  # key -> {"mtime": float, "size": int}
+        self._llm_lock = threading.Lock()
+        self._shared_llm = None
 
 
     def _key(self, file_path: str, template: str) -> str:
@@ -132,6 +132,33 @@ class ServicesHandler:
             self.start_service(full_path, template, st.get("passthrough"))
 
 
+    def _calculate_max_tokens(self, prompt_length):
+        # More complex prompts need more output tokens
+        if prompt_length < 512:
+            return 128  # Simple extraction
+        elif prompt_length < 1024:
+            return 256  # Medium complexity
+        elif prompt_length < 2048:
+            return 512  # Medium complexity  
+        else:
+            return 512  # Maximum for "extract everything"
+
+
+    def _calculate_optimal_ctx(self, prompt_length, max_tokens):
+        # Use the actual calculated max_tokens, not a fixed buffer
+        needed_ctx = prompt_length + max_tokens
+        
+        # Round up to efficient context sizes
+        if needed_ctx <= 512:
+            return 512
+        elif needed_ctx <= 1024:
+            return 1024
+        elif needed_ctx <= 2048:
+            return 2048
+        else:
+            return 4096
+
+
     def _llm_parser(self, logline: str, template_name: str):
 
         try:
@@ -155,21 +182,15 @@ class ServicesHandler:
                 timeout_occurred = threading.Event()
                 timer = threading.Timer(60.0, lambda: timeout_occurred.set())
                 try:
-                    if model_name not in self._llm_pool:
-                        with self._lock:
-                            if model_name not in self._llm_pool:  # Double-check pattern
-                                self._llm_pool[model_name] = LLMHandler(model_name=model_name, n_ctx=2048)
-                                self._llm_locks[model_name] = threading.Lock()
-                    llm = self._llm_pool[model_name]
-                    llm_lock = self._llm_locks[model_name]
-
-                    with llm_lock:
+                    prompt_len = len(full_prompt)
+                    optimal_max_tokens = self._calculate_max_tokens(prompt_len)
+                    optimal_ctx = self._calculate_optimal_ctx(prompt_len, optimal_max_tokens)
+                    
+                    with self._llm_lock:
+                        if self._shared_llm is None or self._shared_llm.n_ctx != optimal_ctx:
+                            self._shared_llm = LLMHandler(model_name=model_name, n_ctx=optimal_ctx)
                         timer.start()
-                        response, latency = llm.infer(
-                            full_prompt,
-                            model_params=model_params,
-                            max_tokens=model_params.get("max_tokens", 512)
-                        )
+                        response, latency = self._shared_llm.infer(full_prompt, model_params, max_tokens=optimal_max_tokens)
                 finally:
                     timer.cancel()
                 #print(f"[LLM] {response}\n\nTime: {latency} sec")
