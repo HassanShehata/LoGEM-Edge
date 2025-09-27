@@ -6,7 +6,7 @@
     5
   ],
   "generic_template.yaml": [
-    "logem-win.gguf",
+    "logem-q4.gguf",
     0.2,
     5,
     5

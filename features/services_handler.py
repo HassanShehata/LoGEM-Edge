@@ -168,7 +168,7 @@ class ServicesHandler:
                         response, latency = llm.infer(
                             full_prompt,
                             model_params=model_params,
-                            max_tokens=model_params.get("max_tokens", 2048)
+                            max_tokens=model_params.get("max_tokens", 512)
                         )
                 finally:
                     timer.cancel()

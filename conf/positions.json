@@ -7,7 +7,8 @@
     "last_id": 2955,
     "last_ts": "2025-09-27 00:58:14.292740+00:00"
   },
-  "helo.log_generic_template.yaml": {
-    "last_pos": 3090
+  "Security.evtx_generic_template_all_keys.yaml": {
+    "last_id": 299042,
+    "last_ts": "2025-09-27 01:19:15.371262+00:00"
   }
 }

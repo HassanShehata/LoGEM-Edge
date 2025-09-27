@@ -8,7 +8,7 @@ import json
 
 
 class LLMHandler:
-    def __init__(self, model_name, model_dir="../../models", n_ctx=2048, n_threads=None, n_batch=64, n_gpu_layers=-1):
+    def __init__(self, model_name, model_dir="../../models", n_ctx=2048, n_threads=None, n_batch=512, n_gpu_layers=-1):
         self.model_path = os.path.abspath(os.path.join(model_dir, model_name))
         self.n_ctx = n_ctx
         self.n_threads = min(2, multiprocessing.cpu_count())
@@ -40,32 +40,10 @@ class LLMHandler:
                 n_batch=self.n_batch,
                 n_gpu_layers=self.n_gpu_layers,
                 verbose=False,
-                # NEW PERFORMANCE PARAMETERS
-                #n_ubatch=512,        # Process tokens in larger micro-batches
-                #flash_attn=True,     # Enable flash attention for speed
-                #use_mmap=True,       # Memory mapping for faster loading
-                use_mlock=True,      # Lock model in RAM
-                rope_scaling_type=0,           # Disable RoPE scaling
-                rope_freq_base=10000.0,        # Standard frequency base
-                mul_mat_q=True,                # Enable quantized matrix multiplication
-                logits_all=False,              # Don't compute all logits
-                embedding=False,               # Disable embeddings
-                offload_kqv=True,              # Offload K,Q,V to GPU
-                flash_attn=True,               # Enable flash attention
-                use_mmap=False,                # Disable memory mapping (try this)
+                use_mlock=True
             )
     
-    def _reset_if_needed(self):
-        """Reset model every 100 calls to prevent memory saturation"""
-        if self.call_count > 0 and self.call_count % 100 == 0:
-            print(f"[LLM] Resetting model after {self.call_count} calls")
-            if self.model:
-                del self.model
-                self.model = None
-            self.load_model()
-
     def infer(self, prompt, model_params=None, max_tokens=64):
-        self._reset_if_needed()
 
         if self.model is None:
             self.load_model()
