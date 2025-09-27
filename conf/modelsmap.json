@@ -10,5 +10,11 @@
     0.2,
     5,
     5
+  ],
+  "generic_template_all_keys.yaml": [
+    "logem-win.gguf",
+    0.2,
+    5,
+    5
   ]
 }

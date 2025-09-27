@@ -1,13 +1,13 @@
 {
-  "Windows PowerShell.evtx_generic_template.yaml": {
-    "last_id": 2828,
-    "last_ts": "2025-09-26 22:50:42.714375+00:00"
-  },
   "Security.evtx_generic_template.yaml": {
-    "last_id": 298374,
-    "last_ts": "2025-09-26 23:12:08.668352+00:00"
+    "last_id": 298631,
+    "last_ts": "2025-09-26 23:52:18.872068+00:00"
+  },
+  "Windows PowerShell.evtx_generic_template.yaml": {
+    "last_id": 2955,
+    "last_ts": "2025-09-27 00:58:14.292740+00:00"
   },
   "helo.log_generic_template.yaml": {
-    "last_pos": 817
+    "last_pos": 3090
   }
 }

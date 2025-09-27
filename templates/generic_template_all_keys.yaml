@@ -1,0 +1,18 @@
+name: generic_events_all_keys
+type_regex: ''
+types: []
+output_format: JSON
+prompt: >
+    Extract fields from the log and return only JSON.
+model_params:
+  stop:
+    - "<|im_start|>"
+    - "<|im_end|>"
+  temperature: 0
+  top_p: 0.9
+model_template: |
+  <|im_start|>system
+  You are a log parser. Return RAW JSON only. No <think>, no prose, no markdown.<|im_end|>
+  <|im_start|>user
+  {{ .Prompt }}<|im_end|>
+  <|im_start|>assistant

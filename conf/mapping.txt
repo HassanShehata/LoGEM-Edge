@@ -5,7 +5,8 @@
   ],
   "C:\\Windows\\System32\\winevt\\Logs\\Security.evtx": [
     "generic_template.yaml",
-    "pass_through_test.yaml"
+    "pass_through_test.yaml",
+    "generic_template_all_keys.yaml"
   ],
   "D:\\AI Projects\\LoGEM-Edge\\unit_tests\\helo.log": [
     "generic_template.yaml"
