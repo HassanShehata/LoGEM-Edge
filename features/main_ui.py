@@ -6,6 +6,8 @@ from models_tab import models_tab
 from sample_test_tab import sample_test_tab
 from output_config_tab import output_config_tab
 from services_handler import services_handler
+from global_config_tab import global_config_tab
+
 
 def main(page: ft.Page):
     page.title = "LoGEM - Log Intelligence"
@@ -46,6 +48,7 @@ def main(page: ft.Page):
             ft.Tab(text="Models", content=models_tab()),
             ft.Tab(text="Sample Test", content=sample_test_tab()),
             ft.Tab(text="Output Config", content=output_config_tab()),
+            ft.Tab(text="Global Config", content=global_config_tab()),
         ],
     )
     page.add(tabs)

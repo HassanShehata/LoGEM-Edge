@@ -1,0 +1,8 @@
+{
+  "llm_timeout": 60,
+  "max_log_size": 1000,
+  "tail_limit": 10,
+  "file_access_rate": 1,
+  "gpu_acceleration": true,
+  "gpu_offload_ratio": 1.0
+}
