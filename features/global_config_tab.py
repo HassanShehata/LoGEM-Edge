@@ -13,7 +13,8 @@ def global_config_tab():
             "tail_limit": 10,
             "file_access_rate": 1,
             "gpu_acceleration": False,
-            "gpu_offload_ratio": 0.5
+            "gpu_offload_ratio": 1.0,
+            "dynamic_ctx": True
         }
         global_config_handler.save_mapping(config)
     

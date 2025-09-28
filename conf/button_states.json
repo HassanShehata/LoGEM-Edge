@@ -1,4 +1,9 @@
 {
+  "Application.evtx_generic_template.yaml": {
+    "enabled": true,
+    "started": true,
+    "passthrough": false
+  },
   "Security.evtx_generic_template_all_keys.yaml": {
     "enabled": true,
     "started": true,

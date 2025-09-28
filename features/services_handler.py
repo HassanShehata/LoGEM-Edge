@@ -9,9 +9,6 @@ from template_handler import TemplateHandler
 import json
 
 
-TAIL_LIMIT = 10  # TODO: make it configurable from UI
-
-
 class ServicesHandler:
     def __init__(self):
         self._lock = threading.Lock()
@@ -22,6 +19,7 @@ class ServicesHandler:
         self._filestats = {}  # key -> {"mtime": float, "size": int}
         self._llm_lock = threading.Lock()
         self._shared_llm = None
+        self.global_config_handler = ConfigsHandler(file_name="global_config.json")
 
 
     def _key(self, file_path: str, template: str) -> str:
@@ -170,6 +168,10 @@ class ServicesHandler:
 
             # Check if log matches template type criteria
             if handler.matches_log(logline):
+
+                global_config = self.global_config_handler.get_saved_paths()
+                max_size = global_config.get("max_log_size", 300) if global_config else 300
+                logline = logline[:max_size] 
                 
                 prompt = handler.get_prompt()
                 model_template = handler.get_model_template()
@@ -180,15 +182,31 @@ class ServicesHandler:
             
                 # Infer with sanitized log line
                 timeout_occurred = threading.Event()
-                timer = threading.Timer(60.0, lambda: timeout_occurred.set())
+                
+                timeout_seconds = global_config.get("llm_timeout", 60) if global_config else 60
+                timer = threading.Timer(float(timeout_seconds), lambda: timeout_occurred.set())
                 try:
                     prompt_len = len(full_prompt)
                     optimal_max_tokens = self._calculate_max_tokens(prompt_len)
                     optimal_ctx = self._calculate_optimal_ctx(prompt_len, optimal_max_tokens)
                     
                     with self._llm_lock:
+                        
                         if self._shared_llm is None or self._shared_llm.n_ctx != optimal_ctx:
-                            self._shared_llm = LLMHandler(model_name=model_name, n_ctx=optimal_ctx)
+                            gpu_enabled = global_config.get("gpu_acceleration", False) if global_config else False
+                            
+                            if gpu_enabled:
+                                gpu_ratio = global_config.get("gpu_offload_ratio", 1.0)
+                                
+                                if gpu_ratio >= 1.0:
+                                    gpu_layers = -1  # All layers
+                                else:
+                                    gpu_layers = max(1, int(gpu_ratio * 32))
+                            else:
+                                gpu_layers = 0
+
+                            self._shared_llm = LLMHandler(model_name=model_name, n_ctx=optimal_ctx, n_gpu_layers=gpu_layers)
+                        
                         timer.start()
                         response, latency = self._shared_llm.infer(full_prompt, model_params, max_tokens=optimal_max_tokens)
                 finally:
@@ -210,9 +228,14 @@ class ServicesHandler:
 
     
     def _monitor_loop(self, file_path: str, template: str, stop_flag: threading.Event, passthrough: bool):
+        
         key = self._key(file_path, template)
         model_map_handler = ConfigsHandler(file_name="modelsmap.json")
-    
+
+        global_config = self.global_config_handler.get_saved_paths()
+        TAIL_LIMIT = global_config.get("tail_limit", 100) if global_config else 100
+        access_rate = global_config.get("file_access_rate", 5) if global_config else 5
+
         # -------- helper: detect text file --------
         def is_text_file(path, blocksize=512):
             try:
@@ -264,7 +287,7 @@ class ServicesHandler:
                     self.positions_handler.save_mapping(pos)
                 except Exception as e:
                     print(f"[text][{key}] error: {e}")
-                if stop_flag.wait(1): break
+                if stop_flag.wait(access_rate): break
             return
     
         # -------- EVTX logs --------
@@ -318,7 +341,7 @@ class ServicesHandler:
             new_id, new_ts, new_dt = last_id, last_ts, last_dt
             try:
                 if not os.path.exists(file_path):
-                    if stop_flag.wait(1): break
+                    if stop_flag.wait(access_rate): break
                     continue
     
                 with Evtx(file_path) as log:
@@ -376,7 +399,7 @@ class ServicesHandler:
                 print(f"[evtx][{key}] error: {e}")
 
     
-            if stop_flag.wait(1): break
+            if stop_flag.wait(access_rate): break
 
 
 
